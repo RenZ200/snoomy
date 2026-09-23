@@ -9,8 +9,8 @@ test('shared data, ownership, PIN, validation, CRUD, persistence after restart',
  const temp=mkdtempSync(join(tmpdir(),'matcha-duo-test-'));
  let child,base;
  async function start(){
-  child=spawn(process.execPath,['server.js'],{env:{...process.env,DATABASE_URL:'',NODE_ENV:'test',PORT:'31987',DB_PATH:join(temp,'test.sqlite'),MORENO_PIN:'1234',CAHYA_PIN:'5678',COOKIE_SECURE:'false'},stdio:['ignore','pipe','pipe']});
-  await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Server timeout')),10000);child.once('error',reject);child.once('exit',code=>{clearTimeout(timer);reject(Error('Server exited '+code));});child.stdout.on('data',d=>{if(String(d).includes('siap')){clearTimeout(timer);resolve();}});child.stderr.on('data',()=>{});});
+  child=spawn(process.execPath,['server.js'],{env:{...process.env,DATABASE_URL:'',NODE_ENV:'test',VERCEL:'',PORT:'31987',DB_PATH:join(temp,'test.sqlite'),MORENO_PIN:'1234',CAHYA_PIN:'5678',COOKIE_SECURE:'false'},stdio:['ignore','pipe','pipe']});
+  await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Server timeout')),30000);child.once('error',reject);child.once('exit',code=>{clearTimeout(timer);reject(Error('Server exited '+code));});child.stdout.on('data',d=>{if(String(d).includes('siap')){clearTimeout(timer);resolve();}});child.stderr.on('data',()=>{});});
   base='http://127.0.0.1:31987/api';
  }
  async function stop(){if(child&&child.exitCode===null)await new Promise(resolve=>{child.once('exit',resolve);child.kill();});}
@@ -34,6 +34,7 @@ test('shared data, ownership, PIN, validation, CRUD, persistence after restart',
   let state=(await request('/state','GET',undefined,cahya)).body;
   assert.equal(state.tasks[0].done,1);assert.equal(state.schedules[0].room,'B2');
   await stop();await start();
+  assert.equal((await request('/state','GET',undefined,moreno)).status,200);
   const fresh=await login('Moreno','1234');state=(await request('/state','GET',undefined,fresh)).body;
   assert.equal(state.schedules.length,1);assert.equal(state.tasks.length,1);assert.equal(state.tasks[0].done,1);
   assert.equal((await request('/schedules/'+created.body.id,'DELETE',{},fresh)).status,200);

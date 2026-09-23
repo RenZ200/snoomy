@@ -1,5 +1,14 @@
 PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;
+CREATE TABLE IF NOT EXISTS sessions (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ token_hash TEXT NOT NULL UNIQUE, user_name TEXT NOT NULL,
+ expires BIGINT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS sessions_expiry ON sessions(expires);
+CREATE TABLE IF NOT EXISTS login_attempts (
+ user_name TEXT PRIMARY KEY, count INTEGER NOT NULL, expires BIGINT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS schedules (
  id INTEGER PRIMARY KEY AUTOINCREMENT,
  owner TEXT NOT NULL CHECK(owner IN ('Moreno','Cahya')),

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { PGlite } from '@electric-sql/pglite';
 import { postgresAdapter } from '../database.js';
+import { createAuth } from '../auth.js';
 
 test('PostgreSQL schema and adapter execute real SQL with constraints, IDs and CRUD', async () => {
   const engine = new PGlite();
@@ -12,6 +13,14 @@ test('PostgreSQL schema and adapter execute real SQL with constraints, IDs and C
   });
   try {
     await engine.exec(readFileSync(new URL('../schema-postgres.sql',import.meta.url),'utf8'));
+    const authA=createAuth(db), authB=createAuth(db);
+    const token=await authA.create('Moreno');
+    assert.equal((await authB.find(token)).user,'Moreno');
+    assert.equal(await authB.find('invalid'),undefined);
+    const attempts=await Promise.all(Array.from({length:9},()=>authA.attempt('Cahya')));
+    assert.equal(attempts.filter(Boolean).length,8);
+    await authB.reset('Cahya');assert.equal(await authA.attempt('Cahya'),true);
+    await authB.remove(token);assert.equal(await authA.find(token),undefined);
     const s = await db.prepare('INSERT INTO schedules(owner,day,start,end,course,lecturer,room) VALUES(?,?,?,?,?,?,?)').run('Moreno',3,'08:00','09:00',"L'art <script>",'','A');
     assert.equal(s.changes,1);assert.equal(s.lastInsertRowid,1);
     assert.equal((await db.prepare('SELECT * FROM schedules WHERE id=?').get(1)).course,"L'art <script>");

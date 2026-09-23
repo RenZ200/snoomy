@@ -29,6 +29,10 @@ export function postgresAdapter(pool) {
 export async function openDatabase() {
   if (process.env.DATABASE_URL) {
     const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 3, connectionTimeoutMillis: 15000, idleTimeoutMillis: 10000 });
+    if (process.env.VERCEL) {
+      const { attachDatabasePool } = await import('@vercel/functions');
+      attachDatabasePool(pool);
+    }
     pool.on('error', () => console.error('Koneksi database terputus. Akan mencoba lagi pada permintaan berikutnya.'));
     try { await pool.query(readFileSync(resolve(root, 'schema-postgres.sql'), 'utf8')); }
     catch { await pool.end(); throw Error('Database cloud belum tersambung. Periksa DATABASE_URL di pengaturan server.'); }

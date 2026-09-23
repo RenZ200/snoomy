@@ -1,6 +1,6 @@
 # Snoomy
 
-**Hosting gratis sudah didukung:** baca [DEPLOY-FREE.md](DEPLOY-FREE.md) untuk GitHub + Render Free + Neon Free. Backend memilih PostgreSQL jika `DATABASE_URL` terisi; tanpa itu, mode lokal tetap menggunakan SQLite. Instruksi Railway/SQLite di bawah adalah alternatif lama.
+**Hosting:** panduan terbaru ada di [DEPLOY-VERCEL.md](DEPLOY-VERCEL.md) untuk Vercel Hobby + Neon Free. Backend memakai PostgreSQL saat DATABASE_URL terisi, atau SQLite untuk mode lokal.
 
 App privat untuk jadwal kuliah dan tugas Moreno & Cahya. Node.js + Express, SQLite lokal, HTML/CSS/JavaScript tanpa framework. Semua source sudah lengkap di folder ini, tidak memerlukan build frontend.
 
@@ -61,7 +61,7 @@ CAHYA_PIN=5678
 COOKIE_SECURE=false
 ```
 
-Ganti contoh PIN tersebut dengan PIN kalian sendiri. Keduanya kosong berarti pemilihan nama tanpa autentikasi, untuk WiFi pribadi. PIN disetel di file konfigurasi laptop server, bukan dari browser. Gunakan PIN keduanya sebelum membuka tunnel atau hosting. PIN 4 digit tetap proteksi sederhana, bukan autentikasi untuk data sensitif. Percobaan salah dibatasi 8 kali per 5 menit per alamat koneksi dan profil; koneksi tunnel dapat berbagi batas ini. Cookie sesi HttpOnly berlaku 24 jam. Server restart mengharuskan login ulang, tetapi data tetap ada.
+Ganti contoh PIN tersebut dengan PIN kalian sendiri. Keduanya kosong berarti pemilihan nama tanpa autentikasi, untuk WiFi pribadi. PIN disetel di file konfigurasi laptop server, bukan dari browser. Gunakan PIN keduanya sebelum membuka tunnel atau hosting. PIN 4 digit tetap proteksi sederhana, bukan autentikasi untuk data sensitif. Percobaan salah dibatasi 8 kali per 5 menit per profil, dibagi semua perangkat. Cookie sesi HttpOnly berlaku 24 jam. Sesi dan data tetap ada setelah server restart.
 
 ## Akses dari laptop Cahya di WiFi yang sama
 

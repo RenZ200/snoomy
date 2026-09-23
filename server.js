@@ -1,16 +1,18 @@
 import express from 'express';
+import { createAuth } from './auth.js';
 import { openDatabase } from './database.js';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { timingSafeEqual } from 'node:crypto';
 
 const root = dirname(fileURLToPath(import.meta.url));
-const app = express(), sessions = new Map(), attempts = new Map();
+const app = express();
 const users = ['Moreno', 'Cahya'];
 const pins = { Moreno: process.env.MORENO_PIN || '', Cahya: process.env.CAHYA_PIN || '' };
 if (Object.values(pins).some(p => p && !/^\d{4}$/.test(p))) throw Error('PIN harus 4 digit.');
 if (process.env.NODE_ENV === 'production' && (!pins.Moreno || !pins.Cahya || process.env.COOKIE_SECURE !== 'true')) throw Error('Hosting memerlukan kedua PIN dan COOKIE_SECURE=true.');
 const db = await openDatabase();
+const auth = createAuth(db);
 app.get('/health', (req,res) => res.json({ok:true}));
 app.disable('x-powered-by');
 app.use(express.json({ limit: '16kb' }));
@@ -22,29 +24,26 @@ app.use((req,res,next) => {
  next();
 });
 const cookie = req => (req.headers.cookie || '').split('; ').find(c => c.startsWith('duo='))?.slice(4);
-app.post('/api/login', (req,res) => {
+app.post('/api/login', async (req,res) => {
  const {user,pin=''} = req.body || {};
  if(!users.includes(user)) return res.status(400).json({error:'Pilih profil yang valid.'});
- const key = req.socket.remoteAddress + user, now = Date.now();
- let attempt = attempts.get(key);
- if(!attempt || attempt.until < now) { attempt={count:0,until:now+300000}; attempts.set(key,attempt); }
- if(attempt.count >= 8) return res.status(429).json({error:'Terlalu banyak percobaan. Tunggu 5 menit.'});
+ if(!await auth.attempt(user)) return res.status(429).json({error:'Terlalu banyak percobaan. Tunggu 5 menit.'});
  const expected = Buffer.from(pins[user]), given = Buffer.from(String(pin));
  if(expected.length && (given.length !== expected.length || !timingSafeEqual(given,expected))) {
-  attempt.count++; return res.status(401).json({error:'PIN belum cocok.'});
+  return res.status(401).json({error:'PIN belum cocok.'});
  }
- attempts.delete(key);
- sessions.delete(cookie(req));
- const token=randomBytes(32).toString('hex'); sessions.set(token,{user,until:now+86400000});
+ await auth.reset(user);
+ await auth.remove(cookie(req));
+ const token=await auth.create(user);
  res.cookie('duo',token,{httpOnly:true,sameSite:'strict',secure:process.env.COOKIE_SECURE==='true',maxAge:86400000});
  res.json({user});
 });
-app.use('/api', (req,res,next) => {
- const session=sessions.get(cookie(req));
- if(!session || session.until < Date.now()) return res.status(401).json({error:'Silakan pilih profil lagi.'});
+app.use('/api', async (req,res,next) => {
+ const session=await auth.find(cookie(req));
+ if(!session) return res.status(401).json({error:'Silakan pilih profil lagi.'});
  req.user=session.user; next();
 });
-app.post('/api/logout',(req,res)=>{sessions.delete(cookie(req));res.clearCookie('duo');res.json({ok:true});});
+app.post('/api/logout',async (req,res)=>{await auth.remove(cookie(req));res.clearCookie('duo');res.json({ok:true});});
 app.get('/api/state',async (req,res)=>res.json({user:req.user,schedules:await db.prepare('SELECT * FROM schedules ORDER BY day,start').all(),tasks:await db.prepare('SELECT * FROM tasks ORDER BY done,deadline,id DESC').all()}));
 const fail = message => { const e=Error(message);e.status=400;throw e; };
 function str(value,label,max=120,optional=false) {
@@ -83,6 +82,8 @@ app.delete('/api/tasks/:id',async (req,res)=>{const r=await db.prepare('DELETE F
 app.use(express.static(resolve(root,'public')));
 app.use('/api',(req,res)=>res.status(404).json({error:'Endpoint tidak ditemukan.'}));
 app.use((err,req,res,next)=>{if(!err.status)console.error('Permintaan server gagal:',err.code || 'internal');res.status(err.status||500).json({error:err.status?err.message:'Server sedang bermasalah.'});});
-const cleanup=setInterval(()=>{for(const [k,v] of sessions)if(v.until<Date.now())sessions.delete(k);for(const [k,v] of attempts)if(v.until<Date.now())attempts.delete(k);},60000);cleanup.unref();
-const server=app.listen(Number(process.env.PORT)||3000,'0.0.0.0',()=>console.log(`Snoomy siap di http://localhost:${server.address().port}`));
-for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>server.close(async ()=>{await db.close();process.exit(0);}));
+export default app;
+if (!process.env.VERCEL) {
+ const server=app.listen(Number(process.env.PORT)||3000,'0.0.0.0',()=>console.log(`Snoomy siap di http://localhost:${server.address().port}`));
+ for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>server.close(async ()=>{await db.close();process.exit(0);}));
+}
