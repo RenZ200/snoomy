@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: snoomy
+    runtime: node
+    plan: free
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 24
+      - key: NODE_ENV
+        value: production
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: DATABASE_URL
+        sync: false
+      - key: MORENO_PIN
+        sync: false
+      - key: CAHYA_PIN
+        sync: false
