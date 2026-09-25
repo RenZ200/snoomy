@@ -1,4 +1,5 @@
 import express from 'express';
+import { mountGoogle } from './google.js';
 import { mountBudget } from './budget.js';
 import { createAuth } from './auth.js';
 import { openDatabase } from './database.js';
@@ -25,6 +26,7 @@ app.use((req,res,next) => {
  next();
 });
 const cookie = req => (req.headers.cookie || '').split('; ').find(c => c.startsWith('duo='))?.slice(4);
+const mountGoogleAuthenticated=mountGoogle(app,db,{cookie});
 app.post('/api/login', async (req,res) => {
  const {user,pin=''} = req.body || {};
  if(!users.includes(user)) return res.status(400).json({error:'Pilih profil yang valid.'});
@@ -44,6 +46,7 @@ app.use('/api', async (req,res,next) => {
  if(!session) return res.status(401).json({error:'Silakan pilih profil lagi.'});
  req.user=session.user; next();
 });
+mountGoogleAuthenticated();
 app.post('/api/logout',async (req,res)=>{await auth.remove(cookie(req));res.clearCookie('duo');res.json({ok:true});});
 app.get('/api/state',async (req,res)=>res.json({user:req.user,schedules:await db.prepare('SELECT * FROM schedules ORDER BY day,start').all(),tasks:await db.prepare('SELECT * FROM tasks ORDER BY done,deadline,id DESC').all()}));
 const fail = message => { const e=Error(message);e.status=400;throw e; };

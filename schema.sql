@@ -30,3 +30,15 @@ CREATE TABLE IF NOT EXISTS budget_records (
  data TEXT NOT NULL,
  created_by TEXT NOT NULL CHECK(created_by IN ('Moreno','Cahya'))
 );
+
+CREATE TABLE IF NOT EXISTS google_connections (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, user_name TEXT NOT NULL UNIQUE, tokens TEXT NOT NULL, calendar_id TEXT NOT NULL DEFAULT '', last_synced BIGINT NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS google_states (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, state_hash TEXT NOT NULL UNIQUE, browser_hash TEXT NOT NULL, session_hash TEXT NOT NULL, user_name TEXT NOT NULL, verifier TEXT NOT NULL, expires BIGINT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS google_maps (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, user_name TEXT NOT NULL, kind TEXT NOT NULL CHECK(kind IN ('schedule','task')), local_id INTEGER NOT NULL, event_id TEXT NOT NULL, baseline TEXT NOT NULL, UNIQUE(user_name,kind,local_id), UNIQUE(user_name,event_id)
+);
+CREATE TABLE IF NOT EXISTS google_lock (id INTEGER PRIMARY KEY, owner TEXT NOT NULL DEFAULT '', expires BIGINT NOT NULL DEFAULT 0);
+INSERT INTO google_lock(id) VALUES(1) ON CONFLICT(id) DO NOTHING;

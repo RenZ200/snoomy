@@ -12,7 +12,7 @@ function showLogin(){document.dispatchEvent(new CustomEvent('snoomy-session',{de
 async function api(path,method='GET',body){
  const response=await fetch('/api'+path,{method,headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
  const data=await response.json();
- if(!response.ok){if(response.status===401&&path!='/login'){state.user=null;showLogin();}throw Error(data.error||'Permintaan gagal.');}return data;
+ if(!response.ok){if(response.status===401&&path!='/login'){state.user=null;showLogin();}throw Error(data.error||'Permintaan gagal.');}if(method!=='GET'&&/^\/(schedules|tasks)/.test(path))document.dispatchEvent(new Event('snoomy-data-changed'));return data;
 }
 async function refresh(){if(refreshing)return;refreshing=true;try{state=await api('/state');render();document.dispatchEvent(new CustomEvent('snoomy-session',{detail:{user:state.user}}));$('#sync').textContent='Tersimpan di server · sinkron tiap 10 detik';}catch(e){$('#sync').textContent='Belum tersambung · mencoba lagi';if(state.user)toast(e.message);}finally{refreshing=false;}}
 function classCard(s){const conflict=state.schedules.some(o=>o.id!==s.id&&o.day===s.day&&o.start<s.end&&o.end>s.start);return `<article class="class-card ${s.owner==='Cahya'?'cahya':''}"><span class="owner">${s.owner}</span><small>${s.start} – ${s.end}</small><strong>${escape(s.course)}</strong>${s.room?`<small>${escape(s.room)}</small>`:''}${s.lecturer?`<small>${escape(s.lecturer)}</small>`:''}${conflict?'<small class="conflict">Bentrok</small>':''}${s.owner===state.user?`<div class="card-actions"><button class="text-button" data-action="edit-schedule" data-id="${s.id}">Edit</button><button class="text-button" data-action="delete-schedule" data-id="${s.id}">Hapus</button></div>`:''}</article>`;}
@@ -56,3 +56,5 @@ document.addEventListener('click',async e=>{
  try{if(action==='check-task')await api('/tasks/'+id,'PUT',{done:button.checked});else await api(`/${type==='schedule'?'schedules':'tasks'}/${id}`,'DELETE',{});await refresh();}catch(error){if(action==='check-task')button.checked=!button.checked;toast(error.message);}finally{button.disabled=false;}
 });
 refresh();setInterval(()=>{if(!document.hidden&&state.user&&!$('#edit-dialog').open)refresh();},10000);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.user&&!$('#edit-dialog').open)refresh();});
+
+document.addEventListener("snoomy-google-synced",()=>{if(!$("#edit-dialog").open)refresh();});

@@ -125,3 +125,7 @@ Jadi opsi gratis paling sederhana yang mempertahankan arsitektur ini adalah lapt
 - Bentrok berarti dua interval jadwal beririsan pada hari yang sama, termasuk jadwal pemilik yang sama. Jadwal berakhir tepat saat jadwal lain mulai tidak dianggap bentrok.
 - Hanya pemilik yang dapat edit/hapus jadwalnya. Tugas dapat dikelola keduanya. Edit bersamaan memakai perubahan terakhir yang tersimpan.
 - Font Google Fonts membutuhkan internet; font sistem menjadi fallback saat offline. Tidak ada SSO/SIAKAD, data contoh palsu, tracking, atau karakter berlisensi.
+
+## Google Calendar dua arah
+
+Panel Google Calendar tersedia di halaman utama. Panduan aktivasi OAuth, cara sinkron, biaya/kuota, dan batasan: [GOOGLE-CALENDAR.md](GOOGLE-CALENDAR.md). Koneksi belum aktif sebelum kredensial server dipasang.
