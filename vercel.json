@@ -1,9 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "runtime": "nodejs20.x",
   "framework": "express",
   "functions": {
     "server.js": {
+      "runtime": "nodejs20.x",
       "includeFiles": "schema-postgres.sql"
     }
   },
