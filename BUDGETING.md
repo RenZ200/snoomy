@@ -21,3 +21,5 @@ Navigasi Budgeting memuat Harian dan Pacaran. Desain memakai variabel warna, fon
 - test/budget.test.js: validasi, perhitungan, API SQLite dan PostgreSQL (PGlite).
 
 Batas awal: data dimuat seluruhnya untuk dua pengguna; banyak foto akan meningkatkan penggunaan penyimpanan dan transfer paket gratis. Tidak ada koneksi bank. Perubahan bersamaan pada catatan yang sama memakai hasil penyimpanan terakhir.
+
+Budgeting sekarang berada di /budgeting.html, terpisah dari halaman kalender/to-do. Tautan /#budgeting lama dialihkan otomatis. budget-session.js menangani login/sinkronisasi halaman khusus. Nyaa memakai tubuh dengan kaki dan tangan terpisah serta kantong tabungan, tanpa mengubah wajah.
