@@ -1,4 +1,5 @@
 import express from 'express';
+import { mountBudget } from './budget.js';
 import { createAuth } from './auth.js';
 import { openDatabase } from './database.js';
 import { dirname, resolve } from 'node:path';
@@ -15,10 +16,10 @@ const db = await openDatabase();
 const auth = createAuth(db);
 app.get('/health', (req,res) => res.json({ok:true}));
 app.disable('x-powered-by');
-app.use(express.json({ limit: '16kb' }));
+app.use(express.json({ limit: '350kb' }));
 app.use((req,res,next) => {
  res.set('X-Content-Type-Options','nosniff');
- res.set('Content-Security-Policy', "default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+ res.set('Content-Security-Policy', "default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
  if(req.path.startsWith('/api')) res.set('Cache-Control','no-store');
  if(!['GET','HEAD','OPTIONS'].includes(req.method) && !req.is('application/json')) return res.status(415).json({error:'Gunakan JSON.'});
  next();
@@ -79,6 +80,7 @@ app.put('/api/tasks/:id',async (req,res)=>{
  await db.prepare('UPDATE tasks SET title=?,deadline=?,assignee=?,priority=?,done=? WHERE id=?').run(...values,Number(done),req.params.id);res.json({ok:true});
 });
 app.delete('/api/tasks/:id',async (req,res)=>{const r=await db.prepare('DELETE FROM tasks WHERE id=?').run(req.params.id);res.status(r.changes?200:404).json(r.changes?{ok:true}:{error:'Tugas tidak ditemukan.'});});
+mountBudget(app,db);
 app.use(express.static(resolve(root,'public')));
 app.use('/api',(req,res)=>res.status(404).json({error:'Endpoint tidak ditemukan.'}));
 app.use((err,req,res,next)=>{if(!err.status)console.error('Permintaan server gagal:',err.code || 'internal');res.status(err.status||500).json({error:err.status?err.message:'Server sedang bermasalah.'});});

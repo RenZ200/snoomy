@@ -19,6 +19,7 @@ test('shared data, ownership, PIN, validation, CRUD, persistence after restart',
  try{
   await start();
   assert.equal((await request('/state')).status,401);
+  assert.equal((await request('/budget')).status,401);
   assert.equal((await request('/login','POST',{user:'Moreno',pin:'0000'})).status,401);
   const moreno=await login('Moreno','1234'), cahya=await login('Cahya','5678');
   const schedule={day:1,start:'08:00',end:'09:40',course:'Statistika',lecturer:'',room:'A1'};
@@ -33,7 +34,10 @@ test('shared data, ownership, PIN, validation, CRUD, persistence after restart',
   assert.equal((await request('/tasks/'+added.body.id,'PUT',{done:true},cahya)).status,200);
   let state=(await request('/state','GET',undefined,cahya)).body;
   assert.equal(state.tasks[0].done,1);assert.equal(state.schedules[0].room,'B2');
+  const budget=await request('/budget/transaction','POST',{scope:'daily',type:'income',amount:150000,category:'Uang saku',date:'2026-09-25',person:'Moreno'},moreno);assert.equal(budget.status,201);
+  assert.equal((await request('/budget','GET',undefined,cahya)).body[0].amount,150000);
   await stop();await start();
+  assert.equal((await request('/budget','GET',undefined,moreno)).body[0].amount,150000);
   assert.equal((await request('/state','GET',undefined,moreno)).status,200);
   const fresh=await login('Moreno','1234');state=(await request('/state','GET',undefined,fresh)).body;
   assert.equal(state.schedules.length,1);assert.equal(state.tasks.length,1);assert.equal(state.tasks[0].done,1);
