@@ -1,3 +1,5 @@
+if (window.self === window.top) location.replace('/#budgeting');
+else document.documentElement.classList.add('budget-embedded');
 import './budget-ui.js';
 const $=s=>document.querySelector(s);
 let activeUser=null,loading=false;

@@ -11,3 +11,11 @@
 .music-panel .music-help{color:var(--muted);line-height:1.5}
 body{padding-bottom:78px}
 @media(max-width:480px){.snoomy-music{right:16px;bottom:16px}.music-panel{max-height:calc(100dvh - 100px);overflow:auto}.music-player iframe{height:200px}}
+
+.music-stop{margin:0 8px 8px 0}
+body.budgeting-mode main{max-width:none;padding:0;margin:0}
+body.budgeting-mode main > :not(#budget-page-frame){display:none!important}
+#budget-page-frame{display:block;width:100%;height:calc(100dvh - 100px);min-height:500px;border:0}
+#budget-page-frame[hidden]{display:none}
+.budget-embedded body > header,.budget-embedded body > .skip{display:none}
+.budget-embedded .budget-page{padding-top:24px}
