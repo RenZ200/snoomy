@@ -8,3 +8,7 @@ export function debt(rows){return rows.filter(r=>r.scope==='date'&&r.type==='exp
 export const level=(spent,limit)=>spent>limit?'over':spent>=limit*.8?'near':'safe';
 export function nextAnnual(date,now=today()){const year=Number(now.slice(0,4)),md=date.slice(5);for(let y=year;y<=year+8;y++){const candidate=`${y}-${md}`,d=new Date(candidate+'T12:00:00Z');if(Number.isFinite(+d)&&d.toISOString().slice(0,10)===candidate&&candidate>=now)return candidate;}}
 export function limitRows(rows,scope,month){const latest=new Map();for(const r of rows.filter(r=>r.kind==='limit'&&r.scope===scope&&r.month===month).sort((a,b)=>a.id-b.id))latest.set(r.category,r);return [...latest.values()];}
+
+// Legacy daily transactions already carry person; old limits belong to the shared wallet.
+export const budgetPerson = row => row.scope === 'date' ? 'Berdua' : (row.person || 'Berdua');
+export const walletRows = (rows, scope, person) => rows.filter(row => row.scope === scope && (scope === 'date' || budgetPerson(row) === person));

@@ -16,7 +16,7 @@ export function validateBudget(kind,b={}) {
  if(kind==='limit') {
   if(typeof b.month!=='string'||!/^20\d{2}-(0[1-9]|1[0-2])$/.test(b.month))bad('Bulan tidak valid.');
   const scope=choice(b.scope,['daily','date']);
-  return {scope,month:b.month,category:scope==='date'?'Semua':text(b.category,'Kategori',50),amount:money(b.amount)};
+  return {scope,person:scope==='date'?'Berdua':choice(b.person??'Berdua',['Moreno','Cahya','Berdua']),month:b.month,category:scope==='date'?'Semua':text(b.category,'Kategori',50),amount:money(b.amount)};
  }
  if(kind==='reminder')return {title:text(b.title,'Nama momen',100),date:date(b.date),target:money(b.target,true)};
  if(kind==='goal')return {title:text(b.title,'Nama target',100),date:date(b.date),target:money(b.target),saved:money(b.saved,true)};

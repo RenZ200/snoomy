@@ -7,6 +7,25 @@ import {PGlite} from '@electric-sql/pglite';
 import {postgresAdapter} from '../database.js';
 import {mountBudget,validateBudget} from '../budget.js';
 import {totals,categories,debt,periodRange,nextAnnual,level} from '../public/budget-core.js';
+import {walletRows,limitRows} from '../public/budget-core.js';
+test('wallets isolate spending and same-category limits, preserving legacy shared limits',()=>{
+ const records=[
+  {id:1,kind:'transaction',scope:'daily',person:'Moreno',type:'expense',amount:100},
+  {id:2,kind:'transaction',scope:'daily',person:'Cahya',type:'expense',amount:200},
+  {id:3,kind:'transaction',scope:'daily',person:'Berdua',type:'expense',amount:300},
+  {id:4,kind:'limit',scope:'daily',month:'2026-09',category:'Makan',amount:1000},
+  {id:5,kind:'limit',scope:'daily',person:'Moreno',month:'2026-09',category:'Makan',amount:500},
+  {id:6,kind:'transaction',scope:'date',person:'Berdua',type:'expense',amount:400}
+ ];
+ for(const [person,amount] of [['Moreno',100],['Cahya',200],['Berdua',300]])assert.equal(totals(walletRows(records,'daily',person)).expense,amount);
+ assert.equal(limitRows(walletRows(records,'daily','Berdua'),'daily','2026-09')[0].amount,1000);
+ assert.equal(limitRows(walletRows(records,'daily','Moreno'),'daily','2026-09')[0].amount,500);
+ assert.equal(totals(walletRows(records,'date','Moreno')).expense,400);
+ const limit={scope:'daily',month:'2026-09',category:'Makan',amount:500};
+ assert.equal(validateBudget('limit',limit).person,'Berdua');
+ assert.equal(validateBudget('limit',{...limit,person:'Cahya'}).person,'Cahya');
+ assert.throws(()=>validateBudget('limit',{...limit,person:'Other'}));
+});
 const transaction={scope:'daily',type:'expense',amount:25000,category:'Makan',date:'2026-09-25',note:'Lunch',person:'Moreno'};
 test('budget validation, period boundaries, totals and equal split',()=>{
  assert.throws(()=>validateBudget('transaction',{...transaction,amount:-1}));
