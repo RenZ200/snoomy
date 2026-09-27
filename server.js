@@ -20,7 +20,7 @@ app.disable('x-powered-by');
 app.use(express.json({ limit: '350kb' }));
 app.use((req,res,next) => {
  res.set('X-Content-Type-Options','nosniff');
- res.set('Content-Security-Policy', "default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+ res.set('Content-Security-Policy', "default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; frame-src https://www.youtube-nocookie.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
  if(req.path.startsWith('/api')) res.set('Cache-Control','no-store');
  if(!['GET','HEAD','OPTIONS'].includes(req.method) && !req.is('application/json')) return res.status(415).json({error:'Gunakan JSON.'});
  next();
