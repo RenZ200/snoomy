@@ -5,7 +5,7 @@
  const home=['dashboard','overview','quick-links','google-calendar'];
  function route(event){
   const hash=location.hash.slice(1)||'dashboard';
-  const page=['calendar','todos','budgeting'].includes(hash)?hash:'dashboard';
+  const page=['calendar','todos','budgeting','gallery'].includes(hash)?hash:'dashboard';
   document.body.dataset.view=page;
   document.body.classList.toggle('budgeting-mode',page==='budgeting');
   for(const section of main.children){
