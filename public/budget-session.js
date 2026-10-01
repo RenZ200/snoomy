@@ -1,5 +1,9 @@
 if (window.self === window.top) location.replace('/#budgeting');
 else document.documentElement.classList.add('budget-embedded');
+// The outer player keeps running; its controls step aside for modal forms.
+const notifyModal=()=>window.parent.postMessage({type:'snoomy-modal',open:!!document.querySelector('dialog[open]')},location.origin);
+const modalObserver=new MutationObserver(notifyModal);
+document.querySelectorAll('dialog').forEach(dialog=>modalObserver.observe(dialog,{attributes:true,attributeFilter:['open']}));
 import './budget-ui.js';
 const $=s=>document.querySelector(s);
 let activeUser=null,loading=false;
