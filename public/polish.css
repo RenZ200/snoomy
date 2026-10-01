@@ -78,3 +78,7 @@ dialog .section-title{flex-wrap:nowrap;align-items:flex-start}dialog .section-ti
 .hero-art{height:320px}.hero-art .spark{top:12px;left:8px}.hero-art:after{right:10px;top:8px}.hero-art img,.hero-art .sticker,.hero-art .spark{transform-origin:50% 50%}
 @media(max-width:1000px){.hero-art{height:270px}.mascot-halo{inset:20px}}
 @media(max-width:600px){.hero-art{height:215px}.mascot-halo{inset:15px}.mascot-halo:after{inset:-6px}.hero-art .spark{top:5px;left:0}.hero-art:after{right:0;top:0}}
+/* Nyaa's full illustration is a keyboard-accessible replay target. */
+#nyaa .nyaa-replay{display:block;flex:none;padding:0;border:0;background:none;box-shadow:none;min-width:80px;border-radius:16px;line-height:0;transform:none}
+#nyaa .nyaa-replay:hover,#nyaa .nyaa-replay:active{transform:none;background:color-mix(in srgb,var(--matcha) 8%,transparent);box-shadow:none}
+#nyaa .nyaa-replay svg{display:block;transform-origin:50% 90%;overflow:visible}

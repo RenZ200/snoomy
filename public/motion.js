@@ -32,24 +32,17 @@
    const mascot=document.querySelector('.hero-art img');
    if(mascot&&mascot.getClientRects().length&&!mascotTimeline?.isActive())gsap.fromTo(mascot,{rotation:3},{rotation:7,duration:.6,ease:'power3.out',overwrite:true});
   });
-  context.add('budgetEnter',event=>{
-   if(!event.target.closest('[data-budget-tab]'))return;
-   const cat=document.querySelector('#nyaa svg');
-   if(cat)gsap.fromTo(cat,{y:5,rotation:-3},{y:0,rotation:0,duration:.4,ease:'power2.out',clearProps:'transform',overwrite:true});
-  });
   context.enter();
   const onRoute=()=>context.enter();
   const hero=document.querySelector('.hero-art');
   hero?.addEventListener('pointerenter',context.mascotHello);
   document.addEventListener('snoomy-route',onRoute);
-  document.addEventListener('click',context.budgetEnter);
   const observer=new MutationObserver(records=>{
    for(const {target,attributeName} of records)if(attributeName==='open'&&target.open)context.dialogEnter(target);
   });
   document.querySelectorAll('dialog').forEach(dialog=>observer.observe(dialog,{attributes:true,attributeFilter:['open']}));
   return ()=>{
    observer.disconnect();document.removeEventListener('snoomy-route',onRoute);
-   document.removeEventListener('click',context.budgetEnter);
    hero?.removeEventListener('pointerenter',context.mascotHello);
   };
  });
