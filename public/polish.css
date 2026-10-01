@@ -70,3 +70,11 @@ body.budgeting-mode{padding-bottom:0;overflow:hidden}#budget-page-frame{height:c
 /* Keep form titles and their close control on the same row. */
 dialog .section-title{flex-wrap:nowrap;align-items:flex-start}dialog .section-title h2{min-width:0}dialog .icon{flex:none}.budget-modal-open .snoomy-music{visibility:hidden}
 @media(max-width:600px){dialog .section-title h2{font-size:25px}.budget-page #budget-title{font-size:40px}.money-grid article:first-child{border-radius:16px}.budget-tabs{width:100%}}
+/* One concentric matcha halo replaces the irregular blob and clipped dot field. */
+.hero-art{background:none;isolation:isolate}
+.hero-art:before{display:none}
+.mascot-halo{position:absolute;inset:24px;border-radius:50%;background:color-mix(in srgb,var(--matcha) 24%,var(--cream));border:1px solid color-mix(in srgb,var(--matcha) 65%,var(--cream));z-index:-1;transform-origin:center}
+.mascot-halo:after{content:'';position:absolute;inset:-9px;border:1px solid color-mix(in srgb,var(--matcha) 35%,var(--cream));border-radius:50%}
+.hero-art{height:320px}.hero-art .spark{top:12px;left:8px}.hero-art:after{right:10px;top:8px}.hero-art img,.hero-art .sticker,.hero-art .spark{transform-origin:50% 50%}
+@media(max-width:1000px){.hero-art{height:270px}.mascot-halo{inset:20px}}
+@media(max-width:600px){.hero-art{height:215px}.mascot-halo{inset:15px}.mascot-halo:after{inset:-6px}.hero-art .spark{top:5px;left:0}.hero-art:after{right:0;top:0}}

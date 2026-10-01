@@ -13,3 +13,7 @@ No database schema, production records, OAuth configuration or API contract chan
 Validation: all 13 existing Node tests passed; JavaScript syntax checked; local browser checks covered workspace navigation, calendar controls, task completion/filtering, budget wallet isolation, keyboard Harian/Pacaran switching, transaction form, persistent music iframe and reduced-motion behavior. Responsive checks use phone, tablet and desktop widths.
 
 GSAP source/license information is in `public/vendor/README.md` and the unmodified vendor distribution header.
+
+## Mascot refinement
+
+The green backdrop is now a concentric CSS circle with a thin outer ring, replacing the uneven blob and cropped polka-dot field. The hero animation follows the installed HyperFrames animation skill's spring-pop-entrance recipe: finite, explicit from/to states and a short stagger (halo, cup, star, sticker), with power3 easing and reduced-motion support. The web playback adapter remains GSAP; this update does not claim a HyperFrames-rendered video or a separate HyperFrames composition.
