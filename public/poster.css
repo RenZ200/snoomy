@@ -203,3 +203,94 @@ header nav.has-pill a[aria-current=page],header nav.has-pill a[aria-current=page
 #install-app:not([hidden])+#sync{margin-left:12px}
 #install-help ol{margin:4px 0 14px;padding-left:22px;font-size:14px;line-height:1.7}
 #install-help p{margin:12px 0 4px}
+
+/* Quality-of-life details. */
+.nav-icon{display:none;width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.hero h1 .greet{display:block;font-size:.46em;line-height:1.1;letter-spacing:-.01em;margin-bottom:.12em;color:var(--pink-deep)}
+body[data-user] .profile:before{content:'';display:inline-grid;place-items:center;width:26px;height:26px;margin:-4px 2px -4px -8px;border-radius:50%;font:600 13px var(--heading);color:var(--plum);background:var(--pill-matcha)}
+body[data-user=Moreno] .profile:before{content:'M'}
+.profile{white-space:nowrap}
+@media(min-width:1001px) and (max-width:1180px){header nav .nav-extra{display:none}header nav a{padding-inline:12px}}
+body[data-user=Cahya] .profile:before{content:'C';background:var(--pill-pink)}
+.quick-links{grid-template-columns:repeat(4,1fr)}
+.quick-links a:nth-child(4) svg{background:linear-gradient(135deg,var(--matcha),var(--pink))!important}
+.quick-links small{transition:color .3s}
+.quick-links small.attention{color:var(--pink-deep);font-weight:800}
+.live-badge{display:inline-flex;align-items:center;gap:6px;width:fit-content;margin:0 0 6px;padding:2px 9px 2px 8px;border-radius:999px;font:800 10.5px var(--body);letter-spacing:.01em}
+.live-badge.now{background:var(--red);color:#fff}
+.live-badge.now:before{content:'';width:6px;height:6px;border-radius:50%;background:#fff}
+.live-badge.next{background:var(--plum);color:var(--cream)}
+.mini .live-badge{margin:6px 0 0}
+.mini.is-now{margin:0 -12px;padding-inline:12px;border-radius:14px;background:color-mix(in srgb,var(--red) 7%,transparent)}
+.class-card.is-now{box-shadow:0 0 0 2px var(--red),0 12px 22px -14px var(--red)}
+.class-card .live-badge{display:flex}
+.free-together{display:flex;align-items:center;gap:8px;margin:14px 0 0;padding:10px 14px;border-radius:16px;background:var(--matcha-soft);font-size:13px;font-weight:800;line-height:1.4}
+.free-together:before{content:'♡';display:grid;place-items:center;flex:none;width:26px;height:26px;border-radius:50%;background:var(--paper);color:var(--pink-deep)}
+.task-group{display:flex;align-items:center;gap:8px;margin:10px 4px 0;font:600 15px var(--heading);letter-spacing:0;color:var(--muted)}
+.task-group:first-child{margin-top:0}
+.task-group span{display:grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:color-mix(in srgb,var(--plum) 8%,transparent);font:800 11px var(--body)}
+.task-group.late{color:var(--red)}
+.task-meta .who{padding:2px 9px;border-radius:999px;background:var(--matcha-soft);color:var(--plum);font-weight:800}
+.task-meta .who.cahya{background:var(--pink-soft)}
+.task-meta .who.berdua{background:linear-gradient(90deg,var(--matcha-soft),var(--pink-soft))}
+#task-count{display:inline-flex;align-items:center;gap:10px}
+#task-count:after{content:'';width:84px;height:8px;border-radius:999px;background:linear-gradient(90deg,var(--matcha) calc(var(--done,0)*100%),color-mix(in srgb,var(--plum) 10%,transparent) 0)}
+@media(max-width:1000px){#calendar>.hint:after{content:' Geser ke samping untuk hari lain.'}.quick-links{grid-template-columns:1fr 1fr;gap:12px}}
+/* Shimmering placeholders until the first data arrives. */
+#week:empty,#task-list:empty,#today-classes:empty,#soon-tasks:empty{border-radius:22px;background:linear-gradient(100deg,transparent 30%,color-mix(in srgb,var(--paper) 75%,transparent) 50%,transparent 70%) 0 0/250% 100%,color-mix(in srgb,var(--plum) 6%,transparent);animation:shimmer 1.4s linear infinite}
+#task-list:empty{min-height:150px}#today-classes:empty,#soon-tasks:empty{min-height:96px}
+@keyframes shimmer{to{background-position:-250% 0}}
+.offline-note{position:fixed;z-index:65;left:50%;top:calc(var(--header-height) + 10px);transform:translateX(-50%);margin:0;padding:8px 16px;border-radius:999px;background:var(--plum);color:var(--cream);font-size:13px;font-weight:700;box-shadow:0 12px 24px -14px var(--plum);white-space:nowrap}
+.offline-note:before{content:'';display:inline-block;width:8px;height:8px;margin-right:8px;border-radius:50%;background:var(--red)}
+
+@media(max-width:600px){
+ /* App-style tab bar. The header loses its blur so the fixed bar is placed against the viewport. */
+ :root{--tabbar:68px}
+ body>header{backdrop-filter:none;-webkit-backdrop-filter:none;background:color-mix(in srgb,var(--cream) 95%,transparent);padding:10px max(16px,env(safe-area-inset-right)) 10px max(16px,env(safe-area-inset-left));min-height:0}
+ header nav{position:fixed;z-index:45;left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));order:0;width:auto;margin:0;padding:5px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;overflow:visible;border:1px solid var(--glass-edge)!important;border-radius:24px;background:color-mix(in srgb,var(--paper) 84%,transparent);backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3);box-shadow:0 14px 34px -14px color-mix(in srgb,var(--plum) 60%,transparent),inset 0 1px 0 #fff}
+ header nav a{flex-direction:column;gap:3px;min-width:0;min-height:54px;padding:6px 1px;border-radius:18px;font-size:10px;line-height:1.1;letter-spacing:-.1px}
+ header nav .nav-icon{display:block}
+ header nav a[aria-current=page] .nav-icon{stroke-width:2.2}
+ header nav .nav-pill{border-radius:18px}
+ body>header nav a.has-turn:after{top:5px;right:calc(50% - 17px)}
+ body{padding-bottom:calc(var(--tabbar) + 28px + env(safe-area-inset-bottom))}
+ main{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}
+ .snoomy-music{right:14px;bottom:calc(var(--tabbar) + 18px + env(safe-area-inset-bottom))}
+ .snoomy-music .music-toggle{width:48px;height:48px;min-height:48px;padding:0;border-radius:50%;font-size:0}
+ .snoomy-music .music-toggle:before{content:'♫';font-size:20px}
+ .music-panel{bottom:58px}
+ #toast{bottom:calc(var(--tabbar) + 26px + env(safe-area-inset-bottom))}
+ #budget-page-frame{height:calc(100dvh - var(--header-height) - var(--tabbar) - 20px - env(safe-area-inset-bottom))}
+ .profile{padding:8px 14px}
+
+ /* Compact hero: the mascot sits beside the button instead of taking a whole screen. */
+ .hero{grid-template-columns:minmax(0,1fr) 118px;grid-template-areas:"date date" "title title" "text text" "cta art" "note art";column-gap:6px;row-gap:0;padding:24px 20px 20px;min-height:0}
+ .hero>div:not(.hero-art){display:contents}
+ .hero .date{grid-area:date;justify-self:start;margin-bottom:14px}
+ .hero h1{grid-area:title;font-size:44px;margin-bottom:10px}
+ .hero p:not(.date){grid-area:text;font-size:14px;margin-bottom:16px}
+ .hero .button{grid-area:cta;justify-self:start;align-self:end}
+ .hero-note{grid-area:note;margin:12px 0 0 4px;font-size:12px}
+ .hero-art{grid-area:art;width:118px;height:128px;margin:0;align-self:end;justify-self:end}
+ .hero-art img{width:100px;height:116px;margin:8px 0 0 10px}
+ .mascot-halo{inset:4px}
+ .hero-art .spark{font-size:24px;top:-4px;left:-4px}
+ .hero-art:after{font-size:28px;left:-10px;bottom:34px}
+ .hero-art .sticker{display:none}
+
+ /* Quick links become a 2x2 grid with their live hint. */
+ .quick-links{grid-template-columns:1fr 1fr;padding:16px 0 4px;margin-bottom:20px}
+ .quick-links a{flex-direction:row;justify-content:flex-start;text-align:left;gap:10px;padding:10px 12px;min-height:58px}
+ .quick-links svg{width:34px;height:34px;padding:6px}
+ .quick-links small{display:block;font-size:11px;line-height:1.3}
+
+ /* Lighter workspace banners so the content starts higher. */
+ #calendar>.section-title,#todos>.section-title,#game>.section-title,.gallery-heading,.budget-heading{padding:22px 20px;border-radius:24px}
+ #calendar>.section-title h2,#todos>.section-title h2,#game>.section-title h2{font-size:38px}
+ #calendar>.section-title p,#todos>.section-title p,#game>.section-title p{font-size:14px;margin-top:6px}
+ #calendar>.section-title:after,#todos>.section-title:after,#game>.section-title:after{width:34px;height:34px;top:16px;right:16px}
+ #calendar>.section-title button,#todos>.section-title button,#game>.section-title button{padding:10px 16px;font-size:13px;min-height:42px}
+ #calendar,#todos,#game{padding-top:16px}
+ #task-count:after{width:64px}
+ .offline-note{white-space:normal;width:max-content;max-width:calc(100vw - 32px);text-align:center}
+}

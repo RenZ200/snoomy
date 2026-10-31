@@ -1,7 +1,7 @@
 // Snoomy app shell: network first so edits show up at once, cached copy only when offline.
 // API calls, uploads and other origins always go straight to the network.
-const CACHE='snoomy-shell-v2';
-const SHELL=['/','/style.css','/polish.css','/poster.css','/google-calendar.css','/music.css','/gallery.css','/cards.css','/app.js','/navigation.js','/motion.js','/google-calendar.js','/gallery.js','/cards.js','/music.js','/pwa.js','/vendor/gsap.min.js','/mascot.svg','/icons/icon-192.png'];
+const CACHE='snoomy-shell-v3';
+const SHELL=['/','/style.css','/polish.css','/poster.css','/google-calendar.css','/music.css','/gallery.css','/cards.css','/app.js','/navigation.js','/motion.js','/google-calendar.js','/gallery.js','/cards.js','/music.js','/pwa.js','/qol.js','/vendor/gsap.min.js','/mascot.svg','/icons/icon-192.png'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
 });

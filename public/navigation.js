@@ -42,6 +42,11 @@
   const day=calendar.querySelector('.day');
   if(day)calendar.scrollBy({left:day.getBoundingClientRect().width*Number(button.dataset.calendarStep),behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
  }));
+ // The day buttons only matter when the week scrolls sideways.
+ const controls=document.querySelector('.calendar-controls');
+ const fits=()=>{if(controls)controls.hidden=calendar.scrollWidth<=calendar.clientWidth+4;};
+ new ResizeObserver(fits).observe(calendar);
+ new MutationObserver(fits).observe(calendar.querySelector('#week'),{childList:true});
  // On narrow screens the week opens on today instead of Monday.
  const showToday=()=>{
   const day=calendar.querySelector('.day.current');

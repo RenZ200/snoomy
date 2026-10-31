@@ -9,13 +9,15 @@
  const WILD=['wild','plus4'];
  const ORDER=['matcha','stroberi','taro','vanila',null];
  const hand=$('#game-hand'),top=$('#game-top'),drawPile=$('#game-draw'),backs=$('#game-opponent-hand'),pick=$('#game-flavor-pick'),callButton=$('#game-call');
- const navLink=document.querySelector('header nav a[href="#game"]');
+ const navLink=document.querySelector('header nav a[href="#game"]'),quick=$('#ql-game'),title=document.title;
  let game=null,user=null,busy=false,timer,pendingWild=null,from=null,calling=false;
  const moving=()=>window.gsap&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
  const onPage=()=>document.body.dataset.view==='game';
  const el=(tag,text,className)=>{const node=document.createElement(tag);if(text!=null)node.textContent=text;if(className)node.className=className;return node;};
  const cardName=card=>WILD.includes(card.v)?VALUE_NAME[card.v]:`${FLAVOR[card.f].name} ${VALUE_NAME[card.v]||card.v}`;
  const notify=message=>window.toast?window.toast(message):alert(message);
+ // Browsers only allow vibration after the person has tapped the page at least once.
+ const buzz=pattern=>{if(navigator.userActivation?.hasBeenActive===false)return;try{navigator.vibrate?.(pattern);}catch{}};
 
  async function api(path,body){
   const response=await fetch('/api/game'+path,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{});
@@ -39,6 +41,9 @@
   const yourTurn=game.status==='playing'&&game.turn===game.you;
   section.dataset.state=game.status;
   navLink?.classList.toggle('has-turn',yourTurn&&!onPage());
+  document.title=yourTurn?`✦ Giliranmu · ${title}`:title;
+  if(quick){quick.textContent=yourTurn?'Giliranmu ✦':game.status==='playing'?`Menunggu ${game.turn}…`:'Main kartu berdua';quick.classList.toggle('attention',yourTurn);}
+  if(yourTurn&&before?.status==='playing'&&before.turn!==game.you)buzz(game.penalty?[30,60,30]:25);
   $('#game-score').replaceChildren(el('span',`${game.you} ${game.wins[game.you]}`,'you'),el('span','–'),el('span',`${game.wins[game.opponent]} ${game.opponent}`));
   const status=game.status==='none'?'Belum ada ronde. Mulai satu ♡':game.status==='finished'?`${game.winner===game.you?'Kamu':game.winner} menang ronde ${game.round} ♡`:yourTurn?(game.penalty?`Balas dengan ${game.penaltyType==='plus4'?'+4':'+2 atau +4'}, atau ambil ${game.penalty} kartu.`:game.drawn?'Kartu barumu cocok. Mainkan atau simpan.':'Giliranmu ✦'):`Menunggu ${game.turn}…`;
   $('#game-status').textContent=status;
@@ -48,6 +53,8 @@
   $('#game-empty').hidden=game.status!=='none';
   if(game.status==='none')return;
   $('#game-opponent-name').textContent=`${game.opponent} · ${game.opponentCount} kartu`;
+  $('#game-last').textContent=game.log.at(-1)?.text||'';
+  $('#game-you-name').textContent=`Kartumu · ${game.hand.length}`;
   backs.replaceChildren(...Array.from({length:Math.min(game.opponentCount,14)},()=>el('span',null,'card back')));
   backs.setAttribute('aria-label',`${game.opponent} memegang ${game.opponentCount} kartu`);
   $('#game-draw-count').textContent=yourTurn&&game.penalty?`Ambil ${game.penalty} kartu`:`${game.drawCount} kartu`;
@@ -96,8 +103,20 @@
   if(game.opponentCount>before.opponentCount)gsap.from([...backs.children].slice(before.opponentCount),{scale:0,duration:.35,stagger:.06,ease:'back.out(2)',clearProps:'transform'});
   if(game.status==='finished'&&before.status==='playing')gsap.from('#game-result',{scale:.7,opacity:0,duration:.6,ease:'back.out(1.8)',clearProps:'transform,opacity'});
   if(yourTurn&&before.turn!==game.you)gsap.fromTo('#game-status',{scale:.9},{scale:1,duration:.5,ease:'back.out(3)',clearProps:'transform'});
+  if(before.log?.at(-1)?.text!==game.log.at(-1)?.text)gsap.fromTo('#game-last',{y:6,scale:.9,opacity:0},{y:0,scale:1,opacity:1,duration:.4,ease:'back.out(2)',clearProps:'transform,opacity'});
+  if(game.status==='finished'&&before.status==='playing'&&game.winner===game.you)confetti();
  }
 
+ function confetti(){
+  const box=$('#game-result').getBoundingClientRect(),colors=['var(--matcha)','var(--pink)','var(--taro)','var(--vanila)','var(--plum)'];
+  for(let i=0;i<28;i++){
+   const piece=el('span',null,'confetti');piece.setAttribute('aria-hidden','true');piece.style.background=colors[i%colors.length];
+   document.body.append(piece);
+   window.gsap.set(piece,{left:box.left+box.width/2,top:box.top+box.height/2,xPercent:-50,yPercent:-50});
+   window.gsap.to(piece,{x:(Math.random()-.5)*Math.min(innerWidth,700),y:-120-Math.random()*220,rotation:Math.random()*720-360,duration:.9,ease:'power3.out'});
+   window.gsap.to(piece,{y:'+=320',opacity:0,duration:1.1,delay:.75,ease:'power1.in',onComplete:()=>piece.remove()});
+  }
+ }
  async function load(){
   if(!user||busy)return;
   try{const next=await api('');if(!busy&&(!game||next.version!==game.version||next.you!==game.you))render(next);}
@@ -109,7 +128,7 @@
   const delay=document.hidden?30000:!onPage()?15000:game?.status==='playing'&&game.turn!==game.you?1500:5000;
   timer=setTimeout(async()=>{await load();schedule();},delay);
  }
- function stop(){clearTimeout(timer);user=null;game=null;navLink?.classList.remove('has-turn');}
+ function stop(){clearTimeout(timer);user=null;game=null;navLink?.classList.remove('has-turn');document.title=title;}
  async function send(path,body={}){
   if(busy||!game)return;
   busy=true;section.setAttribute('aria-busy','true');
@@ -122,6 +141,7 @@
   const button=event.target.closest('.card');
   if(!button||button.disabled)return;
   from=button.getBoundingClientRect();
+  buzz(8);
   const card=game.hand.find(c=>c.id===button.dataset.id);
   if(WILD.includes(card.v)){pendingWild=card.id;pick.showModal();return;}
   send('/play',{card:card.id,call:calling});
@@ -133,6 +153,7 @@
   pick.close();
   send('/play',{card:pendingWild,flavor:choice.dataset.flavor,call:calling});pendingWild=null;
  });
+ pick.addEventListener('close',()=>{pendingWild=null;});
  drawPile.addEventListener('click',()=>send('/draw'));
  $('#game-pass').addEventListener('click',()=>send('/pass'));
  callButton.addEventListener('click',()=>{calling=!calling;callButton.setAttribute('aria-pressed',String(calling));});

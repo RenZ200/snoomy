@@ -27,3 +27,14 @@ The green backdrop is now a concentric CSS circle with a thin outer ring, replac
 ## Installable app (2026-11-01)
 
 Snoomy is a Progressive Web App for Android and iPhone: `public/manifest.webmanifest` (name, colours, icons, shortcuts to Jadwal/To-do/Budgeting), icons in `public/icons/` (mascot on the poster gradient, inside the maskable safe zone), and `public/sw.js`, a network-first service worker that caches only same-origin static files so the shell opens offline; `/api/` requests are never cached. `public/pwa.js` registers the worker and shows "Pasang di HP" in the footer: on Android it triggers the browser install prompt, on iPhone it opens the Safari "Tambah ke Layar Utama" steps (`#install-help`). The button stays hidden once installed. An installed app keeps its own login cookie, so each phone signs in once.
+
+## Quality-of-life pass (2026-11-01)
+
+- **Phones:** the menu becomes an app-style tab bar with icons at the bottom (safe-area aware, `viewport-fit=cover`); the header keeps only the brand and profile. The hero is compact (mascot beside the button), banners are slimmer, quick links form a 2x2 grid, the music button is a small circle above the tab bar and hides on the card table so it never covers the hand. The budgeting frame and toast sit above the tab bar.
+- **Beranda:** time-of-day greeting (Selamat pagi/siang/sore/malam, WIB), a profile initial on the "Ganti" button, a fourth quick link to Permainan, and live hints on each quick link (classes today, open tasks, whose turn it is). "Hari ini di kampus" marks the class happening now and the next one, and shows the hour-long gaps between 07.00 and 21.00 when both of you are free.
+- **Jadwal:** today's current and next class carry "Sekarang"/"Berikutnya" badges; the day buttons only appear when the week scrolls sideways.
+- **To-do:** tasks are grouped (Terlambat, Hari ini & besok, Minggu ini, Nanti, Selesai) with counts, assignees are coloured chips and the done count has a small progress bar.
+- **Forms and dialogs:** the first field is focused when adding a class or task; tapping outside a dialog closes it (login excepted); the login remembers the last profile on that device and jumps to the PIN.
+- **Feedback:** shimmering placeholders while data loads, an offline notice, and in Kartu Snoomy a last-move bubble, your card count, "✦ Giliranmu" in the tab title, a short vibration on your turn (after the first tap, where supported) and confetti when you win.
+
+New file `public/qol.js` holds the login, dialog and offline helpers; styles live at the end of `public/poster.css` and `public/cards.css`.

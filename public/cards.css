@@ -1,6 +1,6 @@
 /* Kartu Snoomy: card faces in the Snoomy palette, a glass table and the player's hand. */
 #game{min-height:55vh}
-#game{--taro:color-mix(in srgb,var(--plum) 45%,var(--pink));--vanila:color-mix(in srgb,var(--cream) 70%,#fff)}
+:root{--taro:color-mix(in srgb,var(--plum) 45%,var(--pink));--vanila:color-mix(in srgb,var(--cream) 70%,#fff)}
 .game-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:20px 0 12px}
 .game-score{display:inline-flex;gap:10px;align-items:center;margin:0;padding:8px 16px;border-radius:999px;background:var(--glass);border:1px solid var(--glass-edge);font:600 15px var(--heading);font-variant-numeric:tabular-nums}
 .game-score .you{color:var(--pink-deep)}
@@ -91,3 +91,25 @@ header nav a.has-turn:after{content:'';position:absolute;top:6px;right:6px;width
 .game-penalty{position:absolute;top:-12px;right:-16px;display:grid;place-items:center;min-width:44px;height:44px;padding:0 8px;border-radius:999px;background:var(--red);color:#fff;font:600 20px var(--heading);box-shadow:0 0 0 3px var(--paper),0 10px 18px -8px var(--red)}
 .game-pile.owed .card{outline-color:var(--red)}
 .game-pile.owed small{color:var(--red);font-weight:800}
+/* Last move bubble, hand label and win confetti. */
+.game-last{position:relative;max-width:min(320px,90%);margin:0;padding:6px 14px;border-radius:14px;background:var(--paper);font-size:12.5px;font-weight:700;text-align:center;box-shadow:0 8px 16px -12px var(--plum)}
+.game-last:empty{display:none}
+.game-last:after{content:'';position:absolute;left:50%;bottom:-5px;width:10px;height:10px;background:var(--paper);transform:translateX(-50%) rotate(45deg)}
+.game-you-name{margin:0;text-align:center;font-size:13px;font-weight:800;color:var(--muted)}
+.confetti{position:fixed;z-index:80;width:9px;height:14px;border-radius:3px;pointer-events:none}
+@media(max-width:600px){
+ /* On phones the table matters more than the banner: keep the hand within one screen. */
+ #game>.section-title{flex-wrap:nowrap;align-items:center;padding:14px 16px 14px 20px}
+ #game>.section-title h2{font-size:28px}
+ #game>.section-title p,#game>.section-title:after{display:none}
+ #game>.section-title button{flex:none;padding:8px 14px;min-height:40px;font-size:12px}
+ .game-bar{margin:12px 0 10px}
+ .game-score{padding:6px 12px;font-size:13px}
+ .game-status.yours{padding:5px 12px}
+ .game-opponent{gap:6px}
+ .game-last{font-size:11.5px;padding:5px 12px}
+ .game-center{padding:2px 0;gap:14px}
+ .game-hand{padding-top:18px}
+ /* The floating music button would cover the hand; playback continues while it is hidden. */
+ body[data-view=game] .snoomy-music{visibility:hidden}
+}
