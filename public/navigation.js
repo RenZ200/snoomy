@@ -42,6 +42,13 @@
   const day=calendar.querySelector('.day');
   if(day)calendar.scrollBy({left:day.getBoundingClientRect().width*Number(button.dataset.calendarStep),behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});
  }));
+ // On narrow screens the week opens on today instead of Monday.
+ const showToday=()=>{
+  const day=calendar.querySelector('.day.current');
+  if(day&&!calendar.closest('[hidden]')&&calendar.scrollWidth>calendar.clientWidth)calendar.scrollLeft=day.offsetLeft-calendar.querySelector('.day').offsetLeft;
+ };
+ document.addEventListener('snoomy-route',event=>{if(event.detail.page==='calendar')showToday();});
+ new MutationObserver((records,observer)=>{if(calendar.querySelector('.day')){observer.disconnect();showToday();}}).observe(calendar.querySelector('#week'),{childList:true});
  document.querySelector('#calendar-today')?.addEventListener('click',()=>{
   const day=calendar.querySelector('.day.current');
   if(day)calendar.scrollTo({left:day.offsetLeft-calendar.querySelector('.day').offsetLeft,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});

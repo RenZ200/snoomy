@@ -17,3 +17,9 @@ GSAP source/license information is in `public/vendor/README.md` and the unmodifi
 ## Mascot refinement
 
 The green backdrop is now a concentric CSS circle with a thin outer ring, replacing the uneven blob and cropped polka-dot field. The hero animation follows the installed HyperFrames animation skill's spring-pop-entrance recipe: finite, explicit from/to states and a short stagger (halo, cup, star, sticker), with power3 easing and reduced-motion support. The web playback adapter remains GSAP; this update does not claim a HyperFrames-rendered video or a separate HyperFrames composition.
+
+## Poster theme and motion (2026-10-31)
+
+`public/poster.css` loads last on both pages. It keeps the original palette tokens from `style.css` and adds grainy poster gradients (with the original Fredoka/Nunito type), glossy pill controls, glass cards and per-day schedule cards.
+
+`public/motion.js` adds a sliding navigation pill (CSS transition), page entrances on every route (banner, heading, details, then cards in a stagger), scroll reveals for content below the fold, a spring mascot entrance and hover greeting, dialog and toast entrances, a sparkle burst when a task is ticked, and a pulse on today's column after "Hari ini". The first data load animates the week and task list; the 10-second refreshes do not. `public/navigation.js` opens the week on today's column when the calendar scrolls horizontally. All motion is finite and switched off by `prefers-reduced-motion`.
