@@ -75,7 +75,7 @@
    pageTimeline?.progress(1).kill();
    reveal.disconnect();
    const tl=pageTimeline=gsap.timeline({defaults:{ease:'power4.out',duration:.8}});
-   const banner=all('.hero,#calendar>.section-title,#todos>.section-title,.gallery-heading,.budget-heading')[0];
+   const banner=all('.hero,#calendar>.section-title,#todos>.section-title,#game>.section-title,.gallery-heading,.budget-heading')[0];
    if(banner){
     tl.fromTo(banner,{y:30,scale:.965,opacity:0},{...settle},0);
     const heading=banner.querySelector('h1,h2');
@@ -88,6 +88,7 @@
    flow(tl,'.overview > article, #google-calendar',{y:30},.42,{stagger:.08});
    flow(tl,'.calendar-toolbar > *, #calendar > .hint, .task-toolbar > *, .gallery-bar',{y:14},.3,{stagger:.05,duration:.55});
    tl.add(()=>{context.weekIn();context.tasksIn();},.36);
+   flow(tl,'.game-bar, .game-table:not([hidden]), .game-empty:not([hidden]), .game-notes',{y:24},.32,{stagger:.07});
    flow(tl,'.gallery-card, .budget-tabs, .budget-tools, .money-grid article, .budget-card',{y:26},.4,{stagger:.06});
   });
   context.add('dialogEnter',dialog=>{

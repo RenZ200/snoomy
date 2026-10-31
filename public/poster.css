@@ -48,9 +48,9 @@ header nav a[aria-current=page]{background:var(--pill-pink);color:var(--plum);bo
 .profile{font-weight:700}
 
 /* Poster surfaces shared by the hero and each workspace heading. */
-.hero,#calendar>.section-title,#todos>.section-title,.gallery-heading,.budget-heading{position:relative;overflow:hidden;isolation:isolate;background:var(--poster);border-radius:36px;box-shadow:var(--shadow-soft),inset 0 1px 0 rgba(255,255,255,.7)}
-.hero:before,#calendar>.section-title:before,#todos>.section-title:before,.gallery-heading:before,.budget-heading:before{content:'';position:absolute;inset:0;z-index:-1;background:var(--grain);opacity:.22;mix-blend-mode:overlay;pointer-events:none}
-.hero:after,#calendar>.section-title:after,#todos>.section-title:after,.gallery-heading:after,.budget-heading:after{content:'';position:absolute;z-index:-1;pointer-events:none;width:110px;height:110px;right:7%;top:14%;left:auto;bottom:auto;background:var(--spark) center/contain no-repeat;opacity:.95;filter:drop-shadow(0 0 18px var(--paper))}
+.hero,#calendar>.section-title,#todos>.section-title,#game>.section-title,.gallery-heading,.budget-heading{position:relative;overflow:hidden;isolation:isolate;background:var(--poster);border-radius:36px;box-shadow:var(--shadow-soft),inset 0 1px 0 rgba(255,255,255,.7)}
+.hero:before,#calendar>.section-title:before,#todos>.section-title:before,#game>.section-title:before,.gallery-heading:before,.budget-heading:before{content:'';position:absolute;inset:0;z-index:-1;background:var(--grain);opacity:.22;mix-blend-mode:overlay;pointer-events:none}
+.hero:after,#calendar>.section-title:after,#todos>.section-title:after,#game>.section-title:after,.gallery-heading:after,.budget-heading:after{content:'';position:absolute;z-index:-1;pointer-events:none;width:110px;height:110px;right:7%;top:14%;left:auto;bottom:auto;background:var(--spark) center/contain no-repeat;opacity:.95;filter:drop-shadow(0 0 18px var(--paper))}
 
 .hero{margin-top:26px;padding:56px 56px 52px;border:0;min-height:440px}
 .hero:after{width:70px;height:70px;left:47%;top:auto;right:auto;bottom:40px}
@@ -83,12 +83,12 @@ header nav a[aria-current=page]{background:var(--pill-pink);color:var(--plum);bo
 .mini{border-top:1px dashed var(--line)}.mini .time{font-variant-numeric:tabular-nums}
 
 /* Workspace banners. */
-#calendar,#todos{padding-top:28px}
-#calendar>.section-title,#todos>.section-title{padding:40px 44px;margin-bottom:8px;align-items:flex-end}
-#calendar>.section-title h2,#todos>.section-title h2{font-size:clamp(46px,5.6vw,80px);line-height:.92;letter-spacing:-.03em;color:var(--plum);margin:0}
-#calendar>.section-title p,#todos>.section-title p{font:17px/1.5 var(--serif);color:var(--ink);margin-top:12px;max-width:30ch}
-#calendar>.section-title:after,#todos>.section-title:after{right:auto;left:min(52%,560px);top:22px;width:64px;height:64px}
-#calendar>.section-title button,#todos>.section-title button{padding:13px 22px;font-size:14px}
+#calendar,#todos,#game{padding-top:28px}
+#calendar>.section-title,#todos>.section-title,#game>.section-title{padding:40px 44px;margin-bottom:8px;align-items:flex-end}
+#calendar>.section-title h2,#todos>.section-title h2,#game>.section-title h2{font-size:clamp(46px,5.6vw,80px);line-height:.92;letter-spacing:-.03em;color:var(--plum);margin:0}
+#calendar>.section-title p,#todos>.section-title p,#game>.section-title p{font:17px/1.5 var(--serif);color:var(--ink);margin-top:12px;max-width:30ch}
+#calendar>.section-title:after,#todos>.section-title:after,#game>.section-title:after{right:auto;left:min(52%,560px);top:22px;width:64px;height:64px}
+#calendar>.section-title button,#todos>.section-title button,#game>.section-title button{padding:13px 22px;font-size:14px}
 
 /* Jadwal: each day is its own glass card; today glows in pink. */
 .calendar-toolbar{margin:20px 0 10px}
@@ -165,10 +165,10 @@ footer{border-top:1px solid var(--line)}
  .sticker{width:112px;height:112px;padding:18px;font-size:12px;right:-26px;bottom:-4px}
  .hero-art:after{font-size:44px;bottom:84px;left:-14px}
  .quick-links{gap:8px}.quick-links a{padding:12px 6px;border-radius:20px}.quick-links strong{font-size:13px}
- #calendar>.section-title,#todos>.section-title,.gallery-heading,.budget-heading{padding:28px 22px;border-radius:28px}
- #calendar>.section-title h2,#todos>.section-title h2{font-size:46px}
- #calendar>.section-title p,#todos>.section-title p{font-size:15px}
- #calendar>.section-title:after,#todos>.section-title:after{left:auto;right:18px;top:18px;width:44px;height:44px}
+ #calendar>.section-title,#todos>.section-title,#game>.section-title,.gallery-heading,.budget-heading{padding:28px 22px;border-radius:28px}
+ #calendar>.section-title h2,#todos>.section-title h2,#game>.section-title h2{font-size:46px}
+ #calendar>.section-title p,#todos>.section-title p,#game>.section-title p{font-size:15px}
+ #calendar>.section-title:after,#todos>.section-title:after,#game>.section-title:after{left:auto;right:18px;top:18px;width:44px;height:44px}
  .legend span{padding:5px 12px 5px 8px}
  .week{grid-template-columns:repeat(7,minmax(78vw,1fr));gap:10px}
  .task,.task:first-child,.task:last-child,.task:only-child{border-radius:20px}
@@ -190,7 +190,7 @@ header nav.has-pill a[aria-current=page],header nav.has-pill a[aria-current=page
 .class-card:hover{transform:translateY(-3px) rotate(-.8deg);box-shadow:0 16px 26px -16px color-mix(in srgb,var(--plum) 55%,transparent)}
 .task:hover{transform:translateY(-2px)}
 .is-moving{transition:none!important}
-.hero:after,#calendar>.section-title:after,#todos>.section-title:after,.gallery-heading:after,.budget-heading:after{animation:spark-in 1s var(--spring) .45s both}
+.hero:after,#calendar>.section-title:after,#todos>.section-title:after,#game>.section-title:after,.gallery-heading:after,.budget-heading:after{animation:spark-in 1s var(--spring) .45s both}
 .hero-art:after{animation:spin-in .9s var(--spring) .7s both}
 .burst{position:fixed;z-index:80;pointer-events:none;font:600 15px var(--heading);color:var(--pink);text-shadow:0 0 6px var(--paper)}
 .burst.matcha{color:var(--matcha)}

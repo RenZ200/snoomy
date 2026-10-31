@@ -2,6 +2,7 @@ import express from 'express';
 import { mountGallery } from './gallery.js';
 import { mountGoogle } from './google.js';
 import { mountBudget } from './budget.js';
+import { mountGame } from './game.js';
 import { createAuth } from './auth.js';
 import { openDatabase } from './database.js';
 import { dirname, resolve } from 'node:path';
@@ -87,6 +88,7 @@ app.put('/api/tasks/:id',async (req,res)=>{
 app.delete('/api/tasks/:id',async (req,res)=>{const r=await db.prepare('DELETE FROM tasks WHERE id=?').run(req.params.id);res.status(r.changes?200:404).json(r.changes?{ok:true}:{error:'Tugas tidak ditemukan.'});});
 mountBudget(app,db);
 mountGallery(app,db);
+mountGame(app,db);
 app.use(express.static(resolve(root,'public')));
 app.use('/api',(req,res)=>res.status(404).json({error:'Endpoint tidak ditemukan.'}));
 app.use((err,req,res,next)=>{if(!err.status)console.error('Permintaan server gagal:',err.code || 'internal');res.status(err.status||500).json({error:err.status?err.message:'Server sedang bermasalah.'});});
