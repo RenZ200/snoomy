@@ -90,6 +90,45 @@ test('+2 and +4 stack: +2 answers +2 or +4, +4 only answers +4', () => {
   assert.deepEqual(view(s, 1, 'Cahya').playable, ['c4']);
 });
 
+test('cards with the same number or symbol can be played together', () => {
+  const pile = () => ({ draw: Array.from({ length: 20 }, (_, i) => card(`p${i}`, 'vanila', String(i % 9 + 1))) });
+  let s = table({ Moreno: [card('a7', 'matcha', '7'), card('b7', 'taro', '7'), card('c7', 'stroberi', '7'), card('x', 'vanila', '2')], Cahya: [card('y', 'vanila', '1')] }, card('t', 'matcha', '5'), pile());
+  assert.throws(() => play(s, 'Moreno', { cards: ['b7', 'a7'] }), /belum cocok/, 'the first card must fit the table');
+  assert.throws(() => play(s, 'Moreno', { cards: ['a7', 'x'] }), /angka atau simbol yang sama/);
+  assert.throws(() => play(s, 'Moreno', { cards: ['a7', 'a7'] }), /tidak valid/);
+  assert.throws(() => play(s, 'Moreno', { cards: ['a7', 'zz'] }), /tidak ada di tanganmu/);
+  play(s, 'Moreno', { cards: ['a7', 'c7', 'b7'], call: true });
+  assert.deepEqual(s.hands.Moreno.map(c => c.id), ['x']);
+  assert.equal(s.discard.at(-1).id, 'b7');
+  assert.equal(s.flavor, 'taro', 'the last card sets the flavour');
+  assert.match(s.log.at(-2).text, /3 kartu sekaligus/);
+
+  s = table({ Moreno: [card('p1', 'matcha', 'plus2'), card('p2', 'taro', 'plus2'), card('m', 'taro', '9'), card('n', 'taro', '8')], Cahya: [card('q1', 'vanila', 'plus2'), card('q2', 'stroberi', 'plus2'), card('k', 'vanila', '1')] }, card('t', 'matcha', '5'), pile());
+  play(s, 'Moreno', { cards: ['p1', 'p2'] });
+  assert.equal(s.penalty, 4);
+  play(s, 'Cahya', { cards: ['q1', 'q2'] });
+  assert.equal(s.penalty, 8, 'stacked +2 cards add up');
+  assert.equal(s.turn, 'Moreno');
+
+  s = table({ Moreno: [card('w1', null, 'plus4'), card('w2', null, 'plus4'), card('m', 'taro', '9'), card('n', 'taro', '8')], Cahya: [card('k', 'vanila', '1')] }, card('t', 'matcha', '5'), pile());
+  play(s, 'Moreno', { cards: ['w1', 'w2'], flavor: 'vanila' });
+  assert.equal(s.penalty, 8);
+  assert.equal(s.flavor, 'vanila');
+
+  s = table({ Moreno: [card('s1', 'matcha', 'skip'), card('s2', 'taro', 'skip'), card('m', 'taro', '9'), card('n', 'taro', '8')], Cahya: [card('k', 'vanila', '1')] }, card('t', 'matcha', '5'), pile());
+  play(s, 'Moreno', { cards: ['s1', 's2'] });
+  assert.equal(s.turn, 'Moreno');
+
+  s = table({ Moreno: [card('a', 'matcha', '4'), card('b', 'taro', '4'), card('c', 'taro', '6')], Cahya: [card('k', 'vanila', '1')] }, card('t', 'matcha', '5'), pile());
+  play(s, 'Moreno', { cards: ['a', 'b'] });
+  assert.equal(s.hands.Moreno.length, 3, 'stacking down to one card still needs the call');
+
+  s = table({ Moreno: [card('a', 'matcha', '4'), card('b', 'taro', '4')], Cahya: [card('k', 'vanila', '1')] }, card('t', 'matcha', '5'), pile());
+  play(s, 'Moreno', { cards: ['a', 'b'] });
+  assert.equal(s.status, 'finished');
+  assert.equal(s.winner, 'Moreno');
+});
+
 test('calling the last card, winning and the next starter', () => {
   let s = table({ Moreno: [card('a', 'matcha', '7'), card('b', 'taro', '2')], Cahya: [card('x', 'vanila', '1')] }, card('t', 'matcha', '5'));
   play(s, 'Moreno', { card: 'a' }, first);
@@ -132,7 +171,11 @@ test('a full random match always ends with a winner', () => {
       assert.ok(moves < 2000, 'match should finish');
       const user = s.turn, hand = s.hands[user];
       const choice = hand.find(c => (!s.drawn || c.id === s.drawn) && playable(s, c));
-      if (choice) play(s, user, { card: choice.id, flavor: 'matcha', call: hand.length === 2 });
+      if (choice) {
+        // Sometimes stack every card that shares the value, to exercise multi-card moves.
+        const group = round % 2 ? [choice, ...hand.filter(c => c !== choice && c.v === choice.v)] : [choice];
+        play(s, user, { cards: group.map(c => c.id), flavor: 'matcha', call: hand.length - group.length === 1 });
+      }
       else if (s.drawn) pass(s, user);
       else draw(s, user);
       const total = s.draw.length + s.discard.length + s.hands.Moreno.length + s.hands.Cahya.length;

@@ -113,3 +113,13 @@ header nav a.has-turn:after{content:'';position:absolute;top:6px;right:6px;width
  /* The floating music button would cover the hand; playback continues while it is hidden. */
  body[data-view=game] .snoomy-music{visibility:hidden}
 }
+/* Stacking same-value cards and the sound toggle. */
+.game-bar-end{display:flex;align-items:center;gap:8px}
+.sound-toggle{width:40px;height:40px;min-height:40px;padding:0;border-radius:50%}
+.sound-toggle svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.sound-toggle svg path:first-child{fill:currentColor;stroke:none}
+.sound-toggle .sound-off,.sound-toggle[aria-pressed=false] .sound-on{display:none}
+.sound-toggle[aria-pressed=false] .sound-off{display:block}
+.game-hand .card.selected{transform:translateY(-22px) rotate(-2deg);box-shadow:0 0 0 3px var(--plum),0 18px 26px -14px var(--plum);z-index:2}
+.game-hand .card.selected:after{content:attr(data-order);position:absolute;top:6px;right:6px;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--plum);color:var(--cream);font:800 11px var(--body)}
+.game-hand.stacking .card.playable:not(.selected){box-shadow:0 0 0 3px var(--pink),0 14px 22px -12px color-mix(in srgb,var(--plum) 80%,transparent)}

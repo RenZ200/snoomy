@@ -1,7 +1,8 @@
 import { randomInt } from 'node:crypto';
 
 // Kartu Snoomy: an original two-player shedding card game. Match the flavour or the value,
-// empty your hand first. +2 and +4 stack: +2 answers +2 or +4, +4 only answers +4. One shared match at a time, stored as JSON with an optimistic version.
+// empty your hand first. +2 and +4 stack: +2 answers +2 or +4, +4 only answers +4.
+// Cards sharing a number or symbol may be played together in one move. One shared match at a time, stored as JSON with an optimistic version.
 export const PLAYERS = ['Moreno', 'Cahya'];
 export const FLAVORS = ['matcha', 'stroberi', 'taro', 'vanila'];
 const FLAVOR_NAME = { matcha: 'Matcha', stroberi: 'Stroberi', taro: 'Taro', vanila: 'Vanila' };
@@ -71,20 +72,25 @@ function mine(state, user) {
   if (state.turn !== user) fail(`Sekarang giliran ${state.turn}.`, 409);
 }
 
-export function play(state, user, { card: id, flavor, call } = {}, rand = randomInt) {
+export function play(state, user, { card: id, cards, flavor, call } = {}, rand = randomInt) {
   mine(state, user);
+  // Several cards with the same number or symbol can go down together; the first one must fit.
+  const ids = Array.isArray(cards) && cards.length ? cards : [id];
+  if (ids.length > 12 || new Set(ids).size !== ids.length) fail('Pilihan kartunya tidak valid.');
   const hand = state.hands[user];
-  const card = hand.find(c => c.id === id);
-  if (!card) fail('Kartu itu tidak ada di tanganmu.');
-  if (state.drawn && state.drawn !== id) fail('Setelah ambil kartu, kamu hanya bisa memainkan kartu yang baru diambil atau lewat.');
+  const chosen = ids.map(cardId => hand.find(c => c.id === cardId));
+  if (chosen.some(c => !c)) fail('Kartu itu tidak ada di tanganmu.');
+  const [card] = chosen;
+  if (state.drawn && state.drawn !== card.id) fail('Setelah ambil kartu, kamu hanya bisa memainkan kartu yang baru diambil atau lewat.');
   if (!playable(state, card)) fail(state.penalty ? (state.penaltyType === 'plus4' ? '+4 hanya bisa dibalas dengan +4.' : '+2 hanya bisa dibalas dengan +2 atau +4.') : 'Kartu itu belum cocok. Samakan rasa atau angkanya.');
+  if (chosen.some(c => c.v !== card.v)) fail('Kartu yang ditumpuk harus punya angka atau simbol yang sama.');
   if (WILD.includes(card.v) && !FLAVORS.includes(flavor)) fail('Pilih rasa yang baru.');
-  const rival = other(user);
-  hand.splice(hand.indexOf(card), 1);
-  state.discard.push(card);
-  state.flavor = WILD.includes(card.v) ? flavor : card.f;
+  const rival = other(user), count = chosen.length;
+  for (const c of chosen) { hand.splice(hand.indexOf(c), 1); state.discard.push(c); }
+  state.flavor = WILD.includes(card.v) ? flavor : chosen.at(-1).f;
   state.drawn = null;
-  say(state, user, WILD.includes(card.v) ? `${user} memainkan ${label(card)} → ${FLAVOR_NAME[flavor]}.` : `${user} memainkan ${label(card)}.`);
+  const played = count > 1 ? `${count} kartu sekaligus: ${chosen.map(label).join(' + ')}` : label(card);
+  say(state, user, WILD.includes(card.v) ? `${user} memainkan ${played} → ${FLAVOR_NAME[flavor]}.` : `${user} memainkan ${played}.`);
   if (!hand.length) {
     state.status = 'finished'; state.winner = user; state.wins = { ...state.wins, [user]: state.wins[user] + 1 };
     say(state, user, `${user} menang ronde ini ♡`);
@@ -92,15 +98,17 @@ export function play(state, user, { card: id, flavor, call } = {}, rand = random
   }
   let again = false;
   if (card.v === 'plus2' || card.v === 'plus4') {
-    state.penalty = (state.penalty || 0) + (card.v === 'plus2' ? 2 : 4);
+    state.penalty = (state.penalty || 0) + (card.v === 'plus2' ? 2 : 4) * count;
     state.penaltyType = card.v;
     say(state, rival, `${rival} harus ambil ${state.penalty} kartu atau membalas.`);
   }
   if (card.v === 'skip') { again = true; say(state, rival, `${rival} kehilangan giliran.`); }
-  if (card.v === 'swap' && state.hands[rival].length) {
-    const give = rand(hand.length), take = rand(state.hands[rival].length);
-    [hand[give], state.hands[rival][take]] = [state.hands[rival][take], hand[give]];
-    say(state, user, `${user} dan ${rival} bertukar satu kartu acak.`);
+  if (card.v === 'swap') {
+    for (let i = 0; i < count && hand.length && state.hands[rival].length; i++) {
+      const give = rand(hand.length), take = rand(state.hands[rival].length);
+      [hand[give], state.hands[rival][take]] = [state.hands[rival][take], hand[give]];
+    }
+    say(state, user, `${user} dan ${rival} bertukar ${count > 1 ? `${count} kartu` : 'satu kartu'} acak.`);
   }
   if (hand.length === 1 && !call) { drawCards(state, user, 2, rand); say(state, user, `${user} lupa bilang “Satu lagi ♡”, ambil 2 kartu.`); }
   else if (hand.length === 1) say(state, user, `${user}: “Satu lagi ♡”`);
