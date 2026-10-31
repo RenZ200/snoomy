@@ -60,9 +60,9 @@ header nav a[aria-current=page]{background:var(--pill-pink);color:var(--plum);bo
 .hero p:not(.date){color:color-mix(in srgb,var(--ink) 80%,transparent);font-weight:500}
 .hero-note{font:600 14px var(--serif);color:var(--plum)}
 
-/* Mascot sits on a glossy matcha arc, flanked by a chunky asterisk. */
+/* Mascot sits in a soft glow, flanked by a chunky asterisk. */
 .mascot-halo{inset:30px;background:radial-gradient(circle at 50% 42%,var(--paper),color-mix(in srgb,var(--paper) 40%,transparent) 55%,transparent 70%);border:0}
-.mascot-halo:after{inset:6px -4px -4px;border:24px solid var(--matcha);border-top-color:transparent;border-left-color:transparent;transform:rotate(45deg);filter:drop-shadow(0 12px 14px color-mix(in srgb,var(--matcha) 55%,transparent))}
+.mascot-halo:after{display:none}
 .hero-art:after{content:'✱';color:var(--red);font:600 64px var(--heading);right:auto;left:-18px;top:auto;bottom:118px;transform:rotate(12deg);text-shadow:0 6px 14px color-mix(in srgb,var(--red) 35%,transparent)}
 .hero-art .spark{color:var(--paper);font-size:56px;text-shadow:0 0 24px var(--paper),0 0 4px color-mix(in srgb,var(--plum) 30%,transparent)}
 .sticker{border:0;border-radius:0;box-shadow:none;width:150px;height:150px;padding:28px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font:600 15px/1.1 var(--heading);letter-spacing:-.02em;color:var(--plum);background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--pink) 60%,#fff),var(--pink) 58%,color-mix(in srgb,var(--pink) 80%,var(--plum)));clip-path:polygon(50% 0%,58.9% 11%,71.7% 5%,74.9% 18.7%,89.1% 18.8%,86% 32.6%,98.7% 38.9%,90% 50%,98.7% 61.1%,86% 67.4%,89.1% 81.2%,74.9% 81.3%,71.7% 95%,58.9% 89%,50% 100%,41.1% 89%,28.3% 95%,25.1% 81.3%,10.9% 81.2%,14% 67.4%,1.3% 61.1%,10% 50%,1.3% 38.9%,14% 32.6%,10.9% 18.8%,25.1% 18.7%,28.3% 5%,41.1% 11%);right:-20px;bottom:6px}
@@ -164,7 +164,6 @@ footer{border-top:1px solid var(--line)}
  .hero-art{margin-inline:auto}
  .sticker{width:112px;height:112px;padding:18px;font-size:12px;right:-26px;bottom:-4px}
  .hero-art:after{font-size:44px;bottom:84px;left:-14px}
- .mascot-halo:after{border-width:16px}
  .quick-links{gap:8px}.quick-links a{padding:12px 6px;border-radius:20px}.quick-links strong{font-size:13px}
  #calendar>.section-title,#todos>.section-title,.gallery-heading,.budget-heading{padding:28px 22px;border-radius:28px}
  #calendar>.section-title h2,#todos>.section-title h2{font-size:46px}
@@ -198,3 +197,9 @@ header nav.has-pill a[aria-current=page],header nav.has-pill a[aria-current=page
 @keyframes wiggle{30%{transform:rotate(-12deg) scale(1.12)}60%{transform:rotate(8deg) scale(1.05)}}
 @keyframes spark-in{from{opacity:0;transform:scale(0) rotate(-140deg)}}
 @keyframes spin-in{from{opacity:0;transform:scale(0) rotate(-200deg)}}
+
+/* Installable app: footer button and install steps. */
+#install-app{min-height:36px;padding:6px 14px;font-size:12px;margin-left:auto}
+#install-app:not([hidden])+#sync{margin-left:12px}
+#install-help ol{margin:4px 0 14px;padding-left:22px;font-size:14px;line-height:1.7}
+#install-help p{margin:12px 0 4px}
