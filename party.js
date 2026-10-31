@@ -65,30 +65,30 @@ export function watchAction(state, user, body, now, title) {
 }
 
 export function mountParty(app, db) {
-  const loadWatch = async () => {
-    const row = await db.prepare('SELECT state,version FROM watch_party WHERE id=1').get();
-    return { state: row?.state ? JSON.parse(row.state) : blank(), version: Number(row?.version || 0) };
-  };
-  const view = async (state, version, user) => {
-    const now = Date.now();
-    const partner = PLAYERS.find(p => p !== user);
-    const seen = await db.prepare('SELECT seen FROM watch_presence WHERE user_name=?').get(partner);
-    return { ...blank(), ...state, version, now, you: user, partner: { name: partner, online: !!seen && now - Number(seen.seen) < ONLINE_MS } };
-  };
+  // Each poll is a handful of small queries run side by side, so the page stays quick even on a slow link.
+  const partnerSeen = user => db.prepare('SELECT seen FROM watch_presence WHERE user_name=?').get(PLAYERS.find(p => p !== user));
+  const view = (state, version, user, seen, now = Date.now()) => ({ ...blank(), ...state, version: Number(version), now, you: user,
+    partner: { name: PLAYERS.find(p => p !== user), online: !!seen && now - Number(seen.seen) < ONLINE_MS } });
   app.get('/api/watch', async (req, res) => {
-    await db.prepare('INSERT INTO watch_presence(user_name,seen) VALUES(?,?) ON CONFLICT(user_name) DO UPDATE SET seen=excluded.seen').run(req.user, Date.now());
-    const { state, version } = await loadWatch();
-    res.json(await view(state, version, req.user));
+    const now = Date.now();
+    const [, row, seen] = await Promise.all([
+      // get() rather than run(): the Postgres adapter adds RETURNING id to run() inserts, and this table has no id.
+      db.prepare('INSERT INTO watch_presence(user_name,seen) VALUES(?,?) ON CONFLICT(user_name) DO UPDATE SET seen=excluded.seen RETURNING seen').get(req.user, now),
+      db.prepare('SELECT state,version FROM watch_party WHERE id=1').get(),
+      partnerSeen(req.user),
+    ]);
+    res.json(view(row?.state ? JSON.parse(row.state) : blank(), row?.version || 0, req.user, seen, now));
   });
   app.post('/api/watch', async (req, res) => {
     const video = req.body?.action === 'load' ? parseYouTube(req.body.url) : null;
-    const title = video ? await lookupTitle(video.id) : null;
-    const { state } = await loadWatch();
-    const next = watchAction(state, req.user, req.body, Date.now(), title);
+    const [title, row] = await Promise.all([video ? lookupTitle(video.id) : null, db.prepare('SELECT state FROM watch_party WHERE id=1').get()]);
+    const next = watchAction(row?.state ? JSON.parse(row.state) : blank(), req.user, req.body, Date.now(), title);
     // Playback is last-writer-wins; the version only tells clients that something changed.
-    await db.prepare('UPDATE watch_party SET state=?,version=version+1 WHERE id=1').run(JSON.stringify(next));
-    const { version } = await loadWatch();
-    res.json(await view(next, version, req.user));
+    const [updated, seen] = await Promise.all([
+      db.prepare('UPDATE watch_party SET state=?,version=version+1 WHERE id=1 RETURNING version').get(JSON.stringify(next)),
+      partnerSeen(req.user),
+    ]);
+    res.json(view(next, updated.version, req.user, seen));
   });
 
   const tracks = async () => (await db.prepare('SELECT id,video_id,title,added_by FROM music_tracks ORDER BY id').all())

@@ -5,7 +5,11 @@
  const section=$('#watch'),YT=window.SnoomyYouTube;
  if(!section||!YT)return;
  const stage=$('#watch-player'),statusLine=$('#watch-status'),partnerLine=$('#watch-partner'),hint=$('#watch-hint'),bubbles=$('#watch-reactions');
- let user=null,state=null,version=-1,offset=0,player=null,mounted=null,quietUntil=0,timer=null,lastReaction=null,sample=null,wanted=0,busy=false;
+ const ENDED=0,PLAYING=1,PAUSED=2,BUFFERING=3;
+ let user=null,state=null,version=-1,offset=0,player=null,mounted=null,timer=null,lastReaction=null,busy=false;
+ // Sync bookkeeping. Events caused by our own commands are ignored for a moment (quietUntil), and after a seek
+ // the player gets time to buffer before its clock is trusted again (settleUntil), so slow phones never loop.
+ let quietUntil=0,settleUntil=0,playTriedAt=0,wanted=0,sample=null,previous=-1;
  const onPage=()=>document.body.dataset.view==='watch';
  const now=()=>Date.now()+offset;
  const expected=()=>state?.videoId?state.position+(state.playing?Math.max(0,(now()-state.updatedAt)/1000):0):0;
@@ -24,70 +28,93 @@
  }
 
  function mount(){
-  player?.destroy();player=null;sample=null;
+  player?.destroy();player=null;sample=null;previous=-1;wanted=0;playTriedAt=0;
   mounted=state.videoId;
+  // Starting at the shared position means no seek (and no extra buffering) is needed once it loads.
   const frame=YT.embed(state.videoId,{start:expected(),title:`Nonton bareng: ${state.title||'video YouTube'}`});
   stage.replaceChildren(frame);
+  stage.classList.add('loading');
+  // The overlay goes as soon as YouTube's own page has loaded, even if the control channel is slow.
+  frame.addEventListener('load',()=>stage.classList.remove('loading'),{once:true});
   player=YT.connect(frame,{
-   onReady:()=>{quietUntil=Date.now()+2000;apply(true);},
+   onReady:()=>{stage.classList.remove('loading');apply();},
    onState:local,
    onTime:time=>{
-    // A sudden jump that we did not cause means someone dragged the progress bar.
-    const at=Date.now();
-    if(sample&&at>quietUntil&&state?.videoId){
-     const predicted=sample.time+(player.state===1?(at-sample.at)/1000:0);
-     if(Math.abs(time-predicted)>2.5)send({action:'seek',position:time},true);
+    const at=Date.now(),playing=player.state===PLAYING;
+    // A jump we did not cause means someone dragged the progress bar on this phone.
+    if(sample&&at>quietUntil&&state?.videoId&&((playing&&at-sample.at<1500)||player.state===PAUSED)){
+     const predicted=sample.time+(playing?(at-sample.at)/1000:0);
+     if(Math.abs(time-predicted)>3){settleUntil=at+4000;send({action:'seek',position:time},true);}
     }
     sample={time,at};
-    if(player.state===1)hint.hidden=true;
    },
    onError:code=>{
+    stage.classList.remove('loading');
     statusLine.replaceChildren(el('span',YT.errorText(code)+' '),Object.assign(el('a','Buka di YouTube'),{href:YT.watchUrl(mounted),target:'_blank',rel:'noopener noreferrer'}));
    },
   });
   window.snoomySound?.play('pop');
  }
 
+ function seekTo(target){
+  const at=Date.now();
+  quietUntil=at+2500;settleUntil=at+6000;
+  player.command('seekTo',[target,true]);
+  player.time=target;sample=null;
+ }
  // Bring this phone's player to the shared position and play state.
  function apply(force=false){
   if(!player?.ready||!state?.videoId)return;
-  const target=expected();
-  if(force||Math.abs(player.time-target)>2){quietUntil=Date.now()+1500;player.command('seekTo',[target,true]);}
-  if(state.playing&&player.state!==1&&player.state!==3){quietUntil=Date.now()+1500;player.command('playVideo');wanted=wanted||Date.now();}
-  if(!state.playing&&player.state===1){quietUntil=Date.now()+1500;player.command('pauseVideo');}
-  if(!state.playing)wanted=0;
+  const at=Date.now(),target=expected();
+  // The player's clock is only trusted while it is really playing (with a fresh reading) or paused.
+  const settled=(player.state===PLAYING&&sample&&at-sample.at<1500)||player.state===PAUSED;
+  if(force||(settled&&at>settleUntil&&Math.abs(player.time-target)>(state.playing?3:1.5)))seekTo(target);
+  if(state.playing&&player.state!==PLAYING&&player.state!==BUFFERING&&at-playTriedAt>3000){
+   quietUntil=Math.max(quietUntil,at+1500);playTriedAt=at;wanted=wanted||at;player.command('playVideo');
+  }
+  if(!state.playing&&(player.state===PLAYING||player.state===BUFFERING)){quietUntil=Math.max(quietUntil,at+1500);player.command('pauseVideo');}
+  if(!state.playing||player.state===PLAYING)wanted=0;
   // Some phones block playback until someone taps the video itself.
-  hint.hidden=!(state.playing&&wanted&&Date.now()-wanted>3000&&player.state!==1);
+  hint.hidden=!(wanted&&at-wanted>3500);
  }
  function local(playerState){
-  if(playerState===1){wanted=0;hint.hidden=true;document.dispatchEvent(new CustomEvent('snoomy-media',{detail:{source:'watch'}}));}
+  const before=previous;previous=playerState;
+  if(playerState===PLAYING){wanted=0;hint.hidden=true;stage.classList.remove('loading');document.dispatchEvent(new CustomEvent('snoomy-media',{detail:{source:'watch'}}));}
   if(Date.now()<quietUntil||!state?.videoId)return;
-  if(playerState===1&&!state.playing)send({action:'play',position:player.time},true);
-  else if(playerState===2&&state.playing)send({action:'pause',position:player.time},true);
-  else if(playerState===0&&state.playing)send({action:'pause',position:player.duration||player.time},true);
+  // Only real button presses count: a phone that could not autoplay must not pause the other phone.
+  if(playerState===PLAYING&&!state.playing)send({action:'play',position:player.time},true);
+  else if(playerState===PAUSED&&before===PLAYING&&state.playing)send({action:'pause',position:player.time},true);
+  else if(playerState===ENDED&&state.playing)send({action:'pause',position:player.duration||player.time},true);
  }
 
- function render(){
+ function showPartner(){
   const partner=state.partner?.name||'Pasangan';
   partnerLine.textContent=state.partner?.online?`${partner} ikut nonton ♡`:`${partner} belum buka halaman ini`;
   partnerLine.classList.toggle('online',!!state.partner?.online);
+ }
+ function showStatus(){
+  if(!state.videoId)return;
+  const who=state.by===state.you?'kamu':state.by;
+  statusLine.textContent=state.playing?`Diputar ${who} · ${clock(expected())}`:`Dijeda ${who} di ${clock(state.position)}`;
+ }
+ function render(){
+  showPartner();
   section.dataset.state=state.videoId?'video':'empty';
   $('#watch-title').textContent=state.videoId?state.title:'';
   $('#watch-clear').hidden=!state.videoId;
   $('#watch-sync').hidden=!state.videoId;
   if(!state.videoId){
-   player?.destroy();player=null;mounted=null;
+   player?.destroy();player=null;mounted=null;stage.classList.remove('loading');
    if(!stage.querySelector('.watch-empty'))stage.replaceChildren($('#watch-empty-template').content.cloneNode(true));
    statusLine.textContent='Tempel link YouTube di atas untuk mulai.';hint.hidden=true;
   }else{
    if(mounted!==state.videoId)mount();else apply();
-   const who=state.by===state.you?'kamu':state.by;
-   statusLine.textContent=state.playing?`Diputar ${who} · ${clock(expected())}`:`Dijeda ${who} di ${clock(state.position)}`;
+   showStatus();
   }
   const history=$('#watch-history');
   history.replaceChildren(...(state.history||[]).filter(item=>item.videoId!==state.videoId).slice(0,6).map(item=>{
    const button=el('button',item.title||'Video YouTube','watch-again');button.type='button';button.dataset.video=item.videoId;
-   return el('li',null,null).appendChild(button).parentNode;
+   const row=el('li');row.append(button);return row;
   }));
   $('#watch-history-box').hidden=!history.children.length;
   if(state.reaction&&lastReaction!==null&&state.reaction.id!==lastReaction&&state.reaction.by!==state.you)float(state.reaction.emoji);
@@ -110,8 +137,11 @@
    const changed=next.version!==version;
    state=next;version=next.version;
    if(changed)render();
-   else{apply();partnerLine.textContent=state.partner?.online?`${state.partner.name} ikut nonton ♡`:`${state.partner.name} belum buka halaman ini`;partnerLine.classList.toggle('online',!!state.partner?.online);if(state.videoId&&state.playing)statusLine.textContent=`Diputar ${state.by===state.you?'kamu':state.by} · ${clock(expected())}`;}
-  }catch(error){if(error.status===401)stop();}
+   else{apply();showPartner();showStatus();}
+  }catch(error){
+   if(error.status===401)stop();
+   else if(version<0)statusLine.textContent='Koneksi lambat, mencoba lagi…';
+  }
  }
  async function send(body,quiet=false){
   busy=true;
@@ -122,7 +152,12 @@
  function schedule(){
   clearTimeout(timer);
   if(!user||!onPage()||document.hidden)return;
-  timer=setTimeout(async()=>{await load();schedule();},1500);
+  timer=setTimeout(async()=>{await load();schedule();},state?.videoId?1500:3000);
+ }
+ function open(){
+  // Show the last known state at once (the video starts at the right spot), then refresh it.
+  if(state&&mounted!==state.videoId)render();
+  load();schedule();
  }
  function stop(){clearTimeout(timer);user=null;}
 
@@ -131,6 +166,7 @@
   const input=$('#watch-url');
   if(!YT.parse(input.value))return notify('Link YouTube-nya belum dikenali. Tempel link video dari YouTube.');
   const button=event.submitter;button.disabled=true;
+  statusLine.textContent='Menyiapkan video…';
   await send({action:'load',url:input.value.trim()});
   button.disabled=false;input.value='';
  });
@@ -150,16 +186,16 @@
  document.addEventListener('snoomy-session',event=>{
   const next=event.detail?.user||null;
   if(next===user)return;
-  stop();user=next;version=-1;
-  if(user&&onPage()){load();schedule();}
+  stop();user=next;version=-1;state=null;
+  if(user&&onPage())open();
  });
  document.addEventListener('snoomy-route',event=>{
-  if(event.detail.page==='watch'&&user){load();schedule();}
+  if(event.detail.page==='watch'&&user)open();
   else{
    clearTimeout(timer);
    // Leaving the page stops the local player; the shared state stays for when you return.
-   if(player){player.destroy();player=null;mounted=null;stage.replaceChildren();version=-1;}
+   if(player){player.destroy();player=null;mounted=null;stage.replaceChildren();stage.classList.remove('loading');version=-1;}
   }
  });
- document.addEventListener('visibilitychange',()=>{if(!document.hidden&&onPage()){load();}schedule();});
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&onPage())load();schedule();});
 })();

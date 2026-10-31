@@ -77,3 +77,6 @@
  /* Music pauses for a shared video, so its button steps aside on this page. */
  body[data-view=watch] .snoomy-music{visibility:hidden}
 }
+/* While the first state or the YouTube player is loading, show it instead of an empty dark box. */
+.watch-player{position:relative}
+.watch-player:empty:after,.watch-player.loading:after{content:'Memuat video…';position:absolute;inset:0;display:grid;place-items:center;color:var(--cream);font-weight:800;font-size:14px;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.1) 50%,transparent 70%) 0 0/250% 100%,var(--plum);animation:shimmer 1.4s linear infinite;pointer-events:none}
