@@ -1,0 +1,163 @@
+/* Permainan: the game picker and the boards for Ludo, Empat Sejajar and Ular Tangga. */
+
+/* Picker */
+.game-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0 6px}
+.game-pick{display:grid;grid-template-columns:52px 1fr;align-items:center;gap:12px;min-height:76px;padding:12px 14px;border-radius:22px;border:1.5px solid var(--glass-edge);background:var(--glass);color:var(--plum);box-shadow:0 10px 22px -18px var(--plum);text-align:left;font-weight:700;transition:transform .25s var(--spring),box-shadow .25s,background .25s,border-color .25s}
+.game-pick:hover{transform:translateY(-2px);box-shadow:0 14px 24px -16px var(--plum)}
+.game-pick:active{transform:translateY(0) scale(.98)}
+.game-pick[aria-selected=true]{background:var(--paper);border-color:var(--plum);box-shadow:0 0 0 3px color-mix(in srgb,var(--pink) 35%,transparent),0 14px 26px -18px var(--plum)}
+.pick-text{display:grid;gap:2px;min-width:0}
+.pick-text strong{font:600 16px/1.2 var(--heading)}
+.pick-text small{font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:1.3em}
+.game-pick.your-turn small{display:inline-flex;align-items:center;gap:6px;color:var(--pink-deep);font-weight:800}
+.game-pick.your-turn small:before{content:'';flex:none;width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 0 2px color-mix(in srgb,var(--red) 25%,transparent)}
+/* Little pictures of each game, drawn in CSS so they stay sharp. */
+.pick-art{position:relative;display:grid;width:52px;height:52px;border-radius:16px;background:var(--cream);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--plum) 10%,transparent);overflow:hidden}
+.art-cards i{position:absolute;top:9px;left:13px;width:22px;height:31px;border-radius:5px;border:2px solid var(--paper);background:var(--matcha);transform:rotate(-14deg);box-shadow:0 4px 8px -4px var(--plum)}
+.art-cards i+i{left:19px;top:11px;background:var(--pink);transform:rotate(10deg)}
+.art-ludo{grid-template:1fr 1fr/1fr 1fr;gap:3px;padding:5px}
+.art-ludo i{border-radius:7px;background:var(--matcha)}
+.art-ludo i:nth-child(2){background:var(--taro)}.art-ludo i:nth-child(3){background:var(--vanila)}.art-ludo i:nth-child(4){background:var(--pink)}
+.art-ludo:after{content:'';position:absolute;inset:38%;border-radius:50%;background:var(--paper);box-shadow:0 0 0 2px var(--plum)}
+.art-four{grid-template:repeat(3,1fr)/repeat(4,1fr);gap:3px;padding:7px;background:var(--plum)}
+.art-four i{border-radius:50%;background:color-mix(in srgb,var(--cream) 85%,var(--plum))}
+.art-four i:nth-child(n+9):nth-child(odd),.art-four i:nth-child(6){background:var(--matcha)}
+.art-four i:nth-child(n+9):nth-child(even),.art-four i:nth-child(7),.art-four i:nth-child(3){background:var(--pink)}
+.art-snakes{background:color-mix(in srgb,var(--matcha) 25%,var(--cream))}
+.art-snakes svg{width:100%;height:100%}
+.art-snakes .rail,.art-snakes .rung{fill:none;stroke:#b07a43;stroke-width:2.6;stroke-linecap:round}
+.art-snakes .rung{stroke-width:2}
+.art-snakes .body{fill:none;stroke:var(--pink);stroke-width:4.4;stroke-linecap:round}
+.art-snakes .head{fill:var(--pink);stroke:var(--plum);stroke-width:1.2}
+
+/* Board panels share the card table's bar, empty state and result card. */
+.board-table{position:relative;display:grid;grid-template-columns:minmax(0,560px) minmax(220px,1fr);gap:22px;align-items:start;padding:22px;border-radius:32px;background:radial-gradient(70% 60% at 40% 45%,color-mix(in srgb,var(--paper) 70%,transparent),transparent 75%),linear-gradient(160deg,var(--matcha-soft),color-mix(in srgb,var(--pink) 18%,var(--cream)));border:1px solid var(--glass-edge);box-shadow:var(--shadow-soft)}
+.board-stage{position:relative;justify-self:center;width:100%}
+.board-stage .game-result{position:relative;inset:auto;margin-top:14px;grid-auto-flow:column;align-items:center;place-content:center;gap:16px;padding:14px 18px;border-radius:22px;background:color-mix(in srgb,var(--paper) 90%,transparent);box-shadow:0 14px 30px -16px var(--plum)}
+.board-stage .game-result p{font-size:clamp(20px,3.2vw,28px)}
+/* The result sits below the board so the winning line stays in view. */
+.board-side{display:grid;gap:16px;align-content:start}
+.board-players{display:grid;gap:8px}
+.board-player{display:flex;align-items:center;gap:10px;margin:0;padding:10px 14px;border-radius:16px;background:var(--glass);border:1px solid var(--glass-edge);font-weight:800;font-size:14px;color:var(--muted)}
+.board-player:before{content:'';flex:none;width:16px;height:16px;border-radius:50%;background:var(--face);box-shadow:0 0 0 2px var(--paper),0 0 0 3.5px var(--plum)}
+.board-player.matcha{--face:var(--matcha)}.board-player.stroberi{--face:var(--pink)}
+.board-player.turn{color:var(--plum);background:var(--paper);box-shadow:0 0 0 2px color-mix(in srgb,var(--face) 70%,transparent)}
+.board-log{padding:16px 20px;border-radius:22px;background:var(--glass);border:1px solid var(--glass-edge)}
+.board-log h3{margin:0 0 6px;font-size:17px}
+.board-rules{margin-top:18px;padding:18px 22px;border-radius:24px;background:var(--glass);border:1px solid var(--glass-edge)}
+.board-empty{display:grid;justify-items:center;gap:10px;text-align:center;padding:40px 20px;border-radius:32px;background:var(--glass);border:1px solid var(--glass-edge);box-shadow:var(--shadow-soft)}
+.board-empty .pick-art{width:84px;height:84px;border-radius:24px;transform:rotate(-5deg);margin-bottom:6px}
+.board-empty .art-cards i{top:16px;left:22px;width:34px;height:48px}.board-empty .art-cards i+i{left:31px;top:19px}
+.board-empty h3{margin:0;font-size:26px}
+.board-empty p{margin:0 0 8px;max-width:42ch;color:var(--muted)}
+.board-panel[aria-busy=true] .dice,.board-panel[aria-busy=true] .token,.board-panel[aria-busy=true] .four-col{pointer-events:none}
+
+/* Die */
+.dice-box{display:grid;justify-items:center;gap:8px;padding:6px 0}
+.dice{display:grid;grid-template:minmax(0,1fr)/minmax(0,1fr);place-items:center;width:84px;height:84px;min-height:84px;padding:0;border-radius:24px;border:2px solid var(--plum);background:linear-gradient(160deg,#fff,var(--paper) 55%,color-mix(in srgb,var(--paper) 80%,var(--plum)));color:var(--plum);box-shadow:0 6px 0 var(--plum),0 16px 24px -14px var(--plum)}
+.dice:hover{transform:translateY(-2px);box-shadow:0 8px 0 var(--plum),0 18px 26px -14px var(--plum)}
+.dice:active:not(:disabled){transform:translateY(4px);box-shadow:0 2px 0 var(--plum),0 8px 14px -10px var(--plum)}
+.dice.ready{background:linear-gradient(160deg,#fff,color-mix(in srgb,var(--pink) 18%,var(--paper)));box-shadow:0 6px 0 var(--plum),0 0 0 6px color-mix(in srgb,var(--pink) 35%,transparent),0 16px 24px -14px var(--plum)}
+.dice:disabled{opacity:.75;cursor:default;transform:none}
+.die{display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);width:62%;height:62%;gap:3px}
+.die i{border-radius:50%;background:var(--plum);opacity:0;transform:scale(.72)}
+.die[data-die="1"] i:nth-child(5),
+.die[data-die="2"] :is(i:nth-child(1),i:nth-child(9)),
+.die[data-die="3"] :is(i:nth-child(1),i:nth-child(5),i:nth-child(9)),
+.die[data-die="4"] :is(i:nth-child(1),i:nth-child(3),i:nth-child(7),i:nth-child(9)),
+.die[data-die="5"] :is(i:nth-child(1),i:nth-child(3),i:nth-child(5),i:nth-child(7),i:nth-child(9)),
+.die[data-die="6"] :is(i:nth-child(1),i:nth-child(3),i:nth-child(4),i:nth-child(6),i:nth-child(7),i:nth-child(9)){opacity:1}
+.die[data-die="1"] i:nth-child(5){background:var(--pink-deep);transform:scale(.95)}
+.dice-hint{margin:0;min-height:1.4em;font-size:13px;font-weight:800;color:var(--muted);text-align:center}
+
+/* Tokens: one cell wide, placed by --x/--y in cells (fractions allowed) and lifted by --h while hopping. */
+.token-layer{position:absolute;inset:0;pointer-events:none}
+.token{position:absolute;left:0;top:0;display:grid;grid-template:minmax(0,1fr)/minmax(0,1fr);place-items:center;width:calc(100%/var(--cols));height:calc(100%/var(--rows));min-height:0;padding:0;margin:0;border:0;border-radius:50%;background:none;box-shadow:none;transform:translate(calc(var(--x,0)*100%),calc((var(--y,0) + var(--h,0))*100%)) scale(var(--s,1));z-index:2;pointer-events:auto}
+.token:hover,.token:active{transform:translate(calc(var(--x,0)*100%),calc((var(--y,0) + var(--h,0))*100%)) scale(var(--s,1));box-shadow:none}
+.token:disabled{opacity:1;cursor:default}
+.token:before{content:'';position:absolute;inset:9%;border-radius:50%;background:radial-gradient(circle at 35% 28%,color-mix(in srgb,#fff 55%,var(--face)),var(--face) 60%,color-mix(in srgb,var(--face) 75%,var(--plum)));border:2px solid var(--plum);box-shadow:0 3px 0 color-mix(in srgb,var(--plum) 80%,transparent),0 6px 10px -4px color-mix(in srgb,var(--plum) 70%,transparent)}
+.token .ci{position:relative;width:44%;height:44%;color:var(--paper);--hole:var(--face)}
+.token.matcha{--face:var(--matcha)}.token.stroberi{--face:var(--pink)}
+.token.movable{z-index:4;cursor:pointer}
+.token.movable:before{box-shadow:0 0 0 3px var(--paper),0 0 0 6px var(--pink-deep),0 8px 14px -4px var(--plum);animation:token-ready 1s var(--spring) 2}
+@keyframes token-ready{50%{transform:translateY(-14%)}}
+
+/* Ludo: a 15×15 grid. Yards in the corners, the cross-shaped track, and the four home triangles in the middle. */
+.ludo-board{--cols:15;--rows:15;position:relative;display:grid;grid-template:repeat(15,1fr)/repeat(15,1fr);width:min(100%,560px);aspect-ratio:1;margin:auto;padding:0;border-radius:20px;background:var(--paper);border:3px solid var(--plum);box-shadow:0 18px 32px -22px var(--plum)}
+.ludo-board .track{background:var(--paper);box-shadow:inset 0 0 0 .5px color-mix(in srgb,var(--plum) 22%,transparent)}
+.ludo-board .track.start,.ludo-board .track.lane{background:var(--face)}
+.ludo-board .track.star{background:var(--star) center/62% no-repeat,var(--paper)}
+.ludo-board .track.start{background:var(--arrow) center/58% no-repeat,var(--face)}
+.ludo-board{--star:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23a486d6' d='M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z'/%3E%3C/svg%3E");--arrow:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fffcf5' d='M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z'/%3E%3C/svg%3E")}
+.ludo-board .matcha{--face:var(--matcha)}.ludo-board .stroberi{--face:var(--pink)}.ludo-board .taro{--face:var(--taro)}.ludo-board .vanila{--face:var(--vanila)}
+.ludo-board .yard{display:grid;place-items:center;background:var(--face);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--plum) 25%,transparent)}
+/* Four token spots inside a white square, matching where tokens wait in the yard. */
+.ludo-board .yard:after{content:'';width:66.7%;height:66.7%;border-radius:22%;background:radial-gradient(circle at 25% 25%,color-mix(in srgb,var(--face) 45%,#fff) 0 15%,transparent 16%),radial-gradient(circle at 75% 25%,color-mix(in srgb,var(--face) 45%,#fff) 0 15%,transparent 16%),radial-gradient(circle at 25% 75%,color-mix(in srgb,var(--face) 45%,#fff) 0 15%,transparent 16%),radial-gradient(circle at 75% 75%,color-mix(in srgb,var(--face) 45%,#fff) 0 15%,transparent 16%),var(--paper);box-shadow:0 0 0 2px color-mix(in srgb,var(--plum) 30%,transparent),0 8px 14px -10px var(--plum)}
+.ludo-board .yard.matcha{border-top-left-radius:17px}.ludo-board .yard.taro{border-top-right-radius:17px}.ludo-board .yard.vanila{border-bottom-left-radius:17px}.ludo-board .yard.stroberi{border-bottom-right-radius:17px}
+.ludo-board .yard.taro:after,.ludo-board .yard.vanila:after{opacity:.75}
+.ludo-board .nest{background:conic-gradient(from -45deg,var(--taro) 0 25%,var(--pink) 0 50%,var(--vanila) 0 75%,var(--matcha) 0);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--plum) 30%,transparent)}
+
+/* Empat Sejajar: a plum frame with seven columns of holes. */
+.four-board{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;width:min(100%,540px);margin:auto;padding:10px;border-radius:26px;background:radial-gradient(90% 70% at 30% 0%,color-mix(in srgb,var(--pink) 25%,transparent),transparent 70%),var(--plum);box-shadow:0 8px 0 color-mix(in srgb,var(--plum) 70%,#000),0 22px 34px -20px var(--plum)}
+.four-col{display:grid;grid-template:repeat(6,auto)/minmax(0,1fr);gap:4px;min-height:0;padding:3px;border:0;border-radius:16px;background:none;box-shadow:none;overflow:hidden}
+.four-col:hover,.four-col:active{transform:none;box-shadow:none}
+.four-col:not(:disabled):hover,.four-col:not(:disabled):focus-visible{background:color-mix(in srgb,var(--cream) 14%,transparent)}
+.four-col:disabled{opacity:1;cursor:default}
+.four-cell{position:relative;aspect-ratio:1;border-radius:50%;background:color-mix(in srgb,var(--cream) 88%,var(--plum));box-shadow:inset 0 4px 7px color-mix(in srgb,var(--plum) 55%,transparent)}
+.disc{--face:var(--matcha);position:absolute;inset:5%;display:grid;grid-template:minmax(0,1fr)/minmax(0,1fr);place-items:center;border-radius:50%;background:radial-gradient(circle at 35% 28%,color-mix(in srgb,#fff 45%,var(--face)),var(--face) 62%,color-mix(in srgb,var(--face) 78%,var(--plum)));box-shadow:inset 0 -4px 0 color-mix(in srgb,var(--plum) 18%,transparent),0 2px 4px color-mix(in srgb,var(--plum) 45%,transparent)}
+.disc.stroberi{--face:var(--pink)}
+.disc .ci{width:46%;height:46%;color:color-mix(in srgb,#fff 65%,var(--face));--hole:var(--face)}
+.four-cell.win .disc{box-shadow:0 0 0 3px var(--paper),0 0 16px 4px var(--face)}
+
+/* Ular Tangga: 10×10 squares, the start strip below, ladders and snakes drawn on top. */
+.snakes-board{--cols:10;--rows:11;position:relative;display:grid;grid-template:repeat(11,1fr)/repeat(10,1fr);width:min(100%,560px);aspect-ratio:10/11;margin:auto}
+.snakes-board .square{display:flex;align-items:flex-start;padding:2px 4px;background:var(--tone);font:600 clamp(9px,1.7vw,13px)/1.2 var(--heading);color:color-mix(in srgb,var(--plum) 55%,transparent);box-shadow:inset 0 0 0 .5px color-mix(in srgb,var(--plum) 14%,transparent)}
+.snakes-board .tone-0{--tone:color-mix(in srgb,var(--matcha) 30%,var(--paper))}
+.snakes-board .tone-1{--tone:color-mix(in srgb,var(--pink) 22%,var(--paper))}
+.snakes-board .tone-2{--tone:color-mix(in srgb,var(--taro) 28%,var(--paper))}
+.snakes-board .tone-3{--tone:color-mix(in srgb,var(--vanila) 55%,var(--paper))}
+.snakes-board .goal{background:var(--pill-pink);color:var(--plum)}
+.snakes-board .c-tl{border-top-left-radius:18px}.snakes-board .c-tr{border-top-right-radius:18px}
+.snakes-board .c-bl{border-bottom-left-radius:18px}.snakes-board .c-br{border-bottom-right-radius:18px}
+.start-strip{grid-area:11/1/12/11;display:flex;align-items:center;justify-content:flex-end;margin-top:8px;padding:0 14px;border-radius:16px;border:2px dashed color-mix(in srgb,var(--plum) 25%,transparent);font:600 14px var(--heading);color:var(--muted)}
+.snakes-art{position:absolute;left:0;top:0;width:100%;height:calc(100%*10/11);overflow:visible;pointer-events:none;filter:drop-shadow(0 3px 2px color-mix(in srgb,var(--plum) 35%,transparent))}
+.ladder .rail{stroke:#a8743f;stroke-width:.11;stroke-linecap:round}
+.ladder .rung{stroke:#c99a5e;stroke-width:.08;stroke-linecap:round}
+.snake{--snake:var(--pink)}.snake.taro{--snake:var(--taro)}
+.snake-edge{fill:none;stroke:var(--plum);stroke-width:.34;stroke-linecap:round}
+.snake-body{fill:none;stroke:var(--snake);stroke-width:.24;stroke-linecap:round}
+.snake-spots{fill:none;stroke:color-mix(in srgb,#fff 50%,var(--snake));stroke-width:.08;stroke-dasharray:.1 .24;stroke-linecap:round}
+.snake-head{fill:var(--snake);stroke:var(--plum);stroke-width:.06}
+.snake-eye{fill:var(--plum)}
+.snakes-board .token{z-index:3}
+
+@media(max-width:900px){
+ /* Smaller screens: players and the die sit above the board, so a roll never needs a scroll; the log goes below. */
+ .board-table{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"players dice" "stage stage" "log log";align-items:center}
+ .board-side{display:contents}
+ .board-players{grid-area:players}
+ .dice-box{grid-area:dice;padding:0}
+ .board-stage{grid-area:stage}
+ .board-log{grid-area:log}
+ .four-panel .board-table{grid-template-areas:"players players" "stage stage" "log log"}
+ .four-panel .board-players{grid-template-columns:1fr 1fr}
+}
+@media(max-width:600px){
+ /* Phones: the picker scrolls sideways and the board uses the full width. */
+ .game-picker{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;margin:14px -4px 4px;padding:4px 4px 10px;scrollbar-width:none}
+ .game-picker::-webkit-scrollbar{display:none}
+ .game-pick{flex:0 0 auto;min-width:152px;min-height:64px;grid-template-columns:40px 1fr;gap:10px;padding:10px 12px;border-radius:18px;scroll-snap-align:start}
+ .pick-art{width:40px;height:40px;border-radius:12px}
+ .art-cards i{top:6px;left:9px;width:17px;height:25px}.art-cards i+i{left:15px;top:8px}
+ .pick-text strong{font-size:14px}
+ .board-table{padding:12px 8px;border-radius:24px;gap:12px}
+ .board-players{gap:6px}
+ .board-player{padding:7px 12px;font-size:13px}
+ .board-player:before{width:13px;height:13px}
+ .dice{width:66px;height:66px;min-height:66px;border-radius:18px}
+ .dice-hint{max-width:110px;font-size:11.5px;line-height:1.25}
+ .ludo-board{border-width:2px;border-radius:14px}
+ .four-board{padding:7px;gap:3px;border-radius:20px}
+ .four-col{gap:3px;padding:2px}
+ .board-rules{padding:14px 18px}
+}

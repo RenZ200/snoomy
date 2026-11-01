@@ -3,17 +3,19 @@
  const $=s=>document.querySelector(s);
  const section=$('#game');
  if(!section)return;
- const FLAVOR={matcha:{name:'Matcha',mark:'✿'},stroberi:{name:'Stroberi',mark:'♥'},taro:{name:'Taro',mark:'✦'},vanila:{name:'Vanila',mark:'●'}};
+ const FLAVOR={matcha:{name:'Matcha'},stroberi:{name:'Stroberi'},taro:{name:'Taro'},vanila:{name:'Vanila'}};
  const VALUE={plus2:'+2',skip:'⊘',swap:'⇄',wild:'★',plus4:'+4'};
+ // Skip, swap and wild are drawn as symbols; numbers and +2/+4 as type.
+ const GLYPH=['skip','swap','wild'];
  const VALUE_NAME={plus2:'Tambah 2',skip:'Lewati',swap:'Tukar Kartu',wild:'Ganti Rasa',plus4:'Tambah 4'};
  const WILD=['wild','plus4'];
  const ORDER=['matcha','stroberi','taro','vanila',null];
  const hand=$('#game-hand'),top=$('#game-top'),drawPile=$('#game-draw'),backs=$('#game-opponent-hand'),pick=$('#game-flavor-pick'),callButton=$('#game-call');
- const stackPlay=$('#game-stack-play'),stackCancel=$('#game-stack-cancel'),soundButton=$('#game-sound');
- const navLink=document.querySelector('header nav a[href="#game"]'),quick=$('#ql-game'),title=document.title;
+ const stackPlay=$('#game-stack-play'),stackCancel=$('#game-stack-cancel'),soundButton=$('#game-sound'),panel=$('#play-cards');
  let game=null,user=null,busy=false,timer,pendingWild=null,from=null,calling=false,selected=[],played=1;
  const moving=()=>window.gsap&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
- const onPage=()=>document.body.dataset.view==='game';
+ // The table is "open" while Permainan shows Kartu Snoomy; other games and pages are covered by the game picker.
+ const onPage=()=>document.body.dataset.view==='game'&&(window.SnoomyGames?.active()??'cards')==='cards';
  const el=(tag,text,className)=>{const node=document.createElement(tag);if(text!=null)node.textContent=text;if(className)node.className=className;return node;};
  const cardName=card=>WILD.includes(card.v)?VALUE_NAME[card.v]:`${FLAVOR[card.f].name} ${VALUE_NAME[card.v]||card.v}`;
  const notify=message=>window.toast?window.toast(message):alert(message);
@@ -27,12 +29,20 @@
   if(!response.ok){const error=Error(data.error);error.status=response.status;throw error;}
   return data;
  }
+ const symbol=name=>{
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'),use=document.createElementNS('http://www.w3.org/2000/svg','use');
+  svg.setAttribute('class','ci');svg.setAttribute('aria-hidden','true');use.setAttribute('href',`#cs-${name}`);svg.append(use);return svg;
+ };
+ // A printed card: value and flavour symbol in two corners, the value large in a tilted oval.
  function face(card,tag='div'){
-  const node=el(tag,null,`card ${card.f||'wild'}`);
-  const value=VALUE[card.v]||card.v;
+  const wild=WILD.includes(card.v);
+  const node=el(tag,null,`card ${card.f||'wild'}${card.v==='plus4'?' plus4':''}`);
+  const value=()=>GLYPH.includes(card.v)?symbol(card.v):el('b',VALUE[card.v]||card.v);
+  const corner=className=>{const box=el('span',null,className);box.append(value());if(card.v!=='wild')box.append(symbol(wild?'wild':card.f));return box;};
+  const pip=el('span',null,'pip');pip.append(value());
   node.dataset.id=card.id;
   node.setAttribute('aria-label',cardName(card));
-  node.append(el('span',value,'corner'),el('span',value,'value'),el('span',WILD.includes(card.v)?VALUE_NAME[card.v]:`${FLAVOR[card.f].mark} ${FLAVOR[card.f].name}`,'flavor-tag'),el('span',value,'corner end'));
+  node.append(corner('corner'),pip,corner('corner end'));
   for(const part of node.children)part.setAttribute('aria-hidden','true');
   return node;
  }
@@ -43,10 +53,9 @@
   const before=game;game=next;
   const yourTurn=game.status==='playing'&&game.turn===game.you;
   selected=yourTurn?selected.filter(byId):[];
-  section.dataset.state=game.status;
-  navLink?.classList.toggle('has-turn',yourTurn&&!onPage());
-  document.title=yourTurn?`✦ Giliranmu · ${title}`:title;
-  if(quick){quick.textContent=yourTurn?'Giliranmu ✦':game.status==='playing'?`Menunggu ${game.turn}…`:'Main kartu berdua';quick.classList.toggle('attention',yourTurn);}
+  panel.dataset.state=game.status;
+  // The game picker keeps the menu dot, tab title and Beranda shortcut up to date for every game.
+  window.SnoomyGames?.report('cards',game);
   $('#game-score').replaceChildren(el('span',`${game.you} ${game.wins[game.you]}`,'you'),el('span','–'),el('span',`${game.wins[game.opponent]} ${game.opponent}`));
   const status=game.status==='none'?'Belum ada ronde. Mulai satu ♡':game.status==='finished'?`${game.winner===game.you?'Kamu':game.winner} menang ronde ${game.round} ♡`:yourTurn?(game.penalty?`Balas dengan ${game.penaltyType==='plus4'?'+4':'+2 atau +4'}, atau ambil ${game.penalty} kartu.`:game.drawn?'Kartu barumu cocok. Mainkan atau simpan.':'Giliranmu ✦'):`Menunggu ${game.turn}…`;
   $('#game-status').textContent=status;
@@ -67,8 +76,7 @@
   $('#game-penalty').hidden=!game.penalty;
   $('#game-penalty').textContent=`+${game.penalty}`;
   const topCard=face(game.top);top.replaceChildren(topCard);
-  const flavor=FLAVOR[game.flavor];
-  $('#game-flavor').textContent=`Rasa sekarang: ${flavor.mark} ${flavor.name}`;
+  $('#game-flavor').replaceChildren(symbol(game.flavor),el('span',`Rasa sekarang: ${FLAVOR[game.flavor].name}`));
   $('#game-flavor').className=`game-flavor ${game.flavor}`;
   renderHand(yourTurn);
   $('#game-pass').hidden=!(yourTurn&&game.drawn)||selected.length>0;
@@ -92,9 +100,10 @@
    return button;
   }));
   hand.classList.toggle('stacking',selected.length>0);
+  hand.classList.toggle('waiting',!yourTurn);
   hand.setAttribute('aria-label',`Kartumu, ${cards.length} kartu`);
   const last=selected.length?byId(selected.at(-1)):null;
-  $('#game-you-name').textContent=selected.length?(WILD.includes(last.v)?`${selected.length} dipilih · ketuk kartu sejenis untuk menumpuk`:`${selected.length} dipilih · rasa berikutnya ${FLAVOR[last.f].mark} ${FLAVOR[last.f].name}`):`Kartumu · ${game.hand.length}`;
+  $('#game-you-name').textContent=selected.length?(WILD.includes(last.v)?`${selected.length} dipilih · ketuk kartu sejenis untuk menumpuk`:`${selected.length} dipilih · rasa berikutnya ${FLAVOR[last.f].name}`):`Kartumu · ${game.hand.length}`;
   stackPlay.hidden=stackCancel.hidden=!selected.length;
   stackPlay.textContent=`Mainkan ${selected.length} kartu`;
   const remaining=game.hand.length-Math.max(selected.length,1);
@@ -107,11 +116,11 @@
  // Sounds and vibration follow every change, including the opponent's moves.
  function feedback(before,yourTurn){
   if(!before||before.status==='none'||game.status==='none'||document.hidden)return;
+  if(!onPage())return;
   if(yourTurn&&before.status==='playing'&&before.turn!==game.you){
    buzz(game.penalty?[30,60,30]:25);
    sound(game.penalty?'penalty':'turn');
   }
-  if(!onPage())return;
   if(game.status==='finished'&&before.status==='playing'){sound(game.winner===game.you?'win':'lose');return;}
   if(game.round!==before.round)return;
   if(before.top?.id!==game.top.id)sound('play',before.turn===game.you?played:Math.max(1,before.opponentCount-game.opponentCount));
@@ -155,19 +164,19 @@
   try{const next=await api('');if(!busy&&(!game||next.version!==game.version||next.you!==game.you))render(next);}
   catch(error){if(error.status===401)stop();}
  }
+ // Only the open table polls; while it is closed the game picker checks every game now and then.
  function schedule(){
   clearTimeout(timer);
-  if(!user)return;
-  const delay=document.hidden?30000:!onPage()?15000:game?.status==='playing'&&game.turn!==game.you?1500:5000;
-  timer=setTimeout(async()=>{await load();schedule();},delay);
+  if(!user||!onPage()||document.hidden)return;
+  timer=setTimeout(async()=>{await load();schedule();},game?.status==='playing'&&game.turn!==game.you?1500:5000);
  }
- function stop(){clearTimeout(timer);user=null;game=null;selected=[];navLink?.classList.remove('has-turn');document.title=title;}
+ function stop(){clearTimeout(timer);user=null;game=null;selected=[];}
  async function send(path,body={}){
   if(busy||!game)return;
-  busy=true;section.setAttribute('aria-busy','true');
+  busy=true;panel.setAttribute('aria-busy','true');
   try{const next=await api(path,{...body,version:game.version});busy=false;render(next);}
   catch(error){busy=false;notify(error.message);if(error.status===409)await load();}
-  finally{busy=false;section.removeAttribute('aria-busy');schedule();}
+  finally{busy=false;panel.removeAttribute('aria-busy');schedule();}
  }
  function commit(ids,box){
   from=box;played=ids.length;selected=[];
@@ -223,9 +232,7 @@
   stop();user=next;
   if(user){load();schedule();}
  });
- document.addEventListener('snoomy-route',event=>{
-  if(event.detail.page==='game'){navLink?.classList.remove('has-turn');load();}
-  schedule();
- });
- document.addEventListener('visibilitychange',()=>{if(!document.hidden)load();schedule();});
+ document.addEventListener('snoomy-route',()=>{if(onPage())load();schedule();});
+ document.addEventListener('snoomy-game',()=>{if(onPage())load();schedule();});
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&onPage())load();schedule();});
 })();

@@ -1,25 +1,40 @@
-/* Kartu Snoomy: card faces in the Snoomy palette, a glass table and the player's hand. */
+/* Kartu Snoomy: printed-card faces in the Snoomy palette, a glass table and the player's hand. */
 #game{min-height:55vh}
-:root{--taro:color-mix(in srgb,var(--plum) 45%,var(--pink));--vanila:color-mix(in srgb,var(--cream) 70%,#fff)}
+/* Taro is a lilac and vanila a custard yellow, so all four flavours stay apart (and plum ink reads on each). */
+:root{--taro:#a486d6;--vanila:#f1db97}
 .game-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:20px 0 12px}
 .game-score{display:inline-flex;gap:10px;align-items:center;margin:0;padding:8px 16px;border-radius:999px;background:var(--glass);border:1px solid var(--glass-edge);font:600 15px var(--heading);font-variant-numeric:tabular-nums}
 .game-score .you{color:var(--pink-deep)}
 .game-status{margin:0;font-weight:800;font-size:15px;color:var(--muted)}
 .game-status.yours{color:var(--plum);padding:6px 14px;border-radius:999px;background:var(--pill-matcha)}
 
-/* Cards */
-.card{--w:76px;position:relative;display:grid;place-items:center;width:var(--w);aspect-ratio:5/7;flex:none;padding:0;border-radius:calc(var(--w)*.16);border:2px solid var(--paper);color:var(--plum);background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.55),transparent 45%),radial-gradient(color-mix(in srgb,#fff 28%,transparent) 1.2px,transparent 1.6px) 0 0/10px 10px,var(--matcha);box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 8px 16px -10px color-mix(in srgb,var(--plum) 70%,transparent);font-family:var(--heading);overflow:hidden;user-select:none}
-.card.stroberi{background-color:var(--pink)}
-.card.taro{background-color:var(--taro);color:var(--cream)}
-.card.vanila{background-color:var(--vanila);border-color:color-mix(in srgb,var(--plum) 18%,transparent)}
-.card.wild{background:conic-gradient(from 45deg,var(--matcha) 0 25%,var(--pink) 0 50%,var(--taro) 0 75%,var(--vanila) 0);color:var(--plum)}
-.card .value{font-size:calc(var(--w)*.42);font-weight:600;line-height:1;text-shadow:0 2px 0 rgba(255,255,255,.35)}
-.card.taro .value{text-shadow:0 2px 0 rgba(0,0,0,.15)}
-.card.wild .value{display:grid;place-items:center;width:58%;aspect-ratio:1;border-radius:30%;background:var(--paper);font-size:calc(var(--w)*.3)}
-.card .corner{position:absolute;top:5%;left:9%;font-size:calc(var(--w)*.16);font-weight:600;line-height:1}
-.card .corner.end{top:auto;left:auto;bottom:5%;right:9%;transform:rotate(180deg)}
-.card .flavor-tag{position:absolute;bottom:13%;left:50%;transform:translateX(-50%);white-space:nowrap;padding:1px 7px;border-radius:999px;background:color-mix(in srgb,var(--paper) 80%,transparent);color:var(--plum);font:800 calc(var(--w)*.1) var(--body)}
-.card.back{background:radial-gradient(color-mix(in srgb,var(--pink) 55%,transparent) 1.4px,transparent 1.8px) 0 0/9px 9px,url('/mascot.svg') center/52% no-repeat,var(--plum);border-color:var(--paper)}
+/* Symbols drawn from the sprite at the end of index.html; colour comes from the element using them. */
+.symbol-sprite{position:absolute;width:0;height:0;overflow:hidden}
+.ci{display:block;width:1em;height:1em;fill:currentColor;flex:none}
+.cs-hole{fill:var(--hole,#fff)}
+.cs-m{fill:var(--matcha)}.cs-s{fill:var(--pink)}.cs-t{fill:var(--taro)}.cs-v{fill:var(--vanila)}
+
+/* Cards. Each flavour has its own symbol in the corners, so colour is never the only cue. */
+.card{--w:76px;--face:var(--matcha);--ink:var(--plum);--hole:var(--face);position:relative;display:grid;grid-template:minmax(0,1fr)/minmax(0,1fr);place-items:center;width:var(--w);aspect-ratio:5/7;flex:none;padding:0;border-radius:calc(var(--w)*.15);border:calc(var(--w)*.05) solid var(--paper);color:var(--ink);background:radial-gradient(120% 70% at 15% 0%,rgba(255,255,255,.5),transparent 60%),radial-gradient(rgba(255,255,255,.3) 1px,transparent 1.5px) 0 0/calc(var(--w)*.13) calc(var(--w)*.13),linear-gradient(165deg,color-mix(in srgb,var(--face) 78%,#fff),var(--face) 48%,color-mix(in srgb,var(--face) 82%,var(--plum)));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--plum) 12%,transparent),0 1px 0 1px color-mix(in srgb,var(--plum) 14%,transparent),0 12px 20px -14px color-mix(in srgb,var(--plum) 80%,transparent);font-family:var(--heading);overflow:hidden;user-select:none;-webkit-user-select:none}
+.card.stroberi{--face:var(--pink)}
+.card.taro{--face:var(--taro)}
+.card.vanila{--face:var(--vanila)}
+.card.wild{--face:var(--plum);--ink:var(--cream);--hole:var(--plum);background:radial-gradient(90% 60% at 20% 0%,color-mix(in srgb,var(--pink) 30%,transparent),transparent 65%),radial-gradient(color-mix(in srgb,var(--cream) 18%,transparent) 1px,transparent 1.5px) 0 0/calc(var(--w)*.13) calc(var(--w)*.13),var(--plum)}
+/* The tilted oval in the middle, like a stamp, with the value upright inside it. */
+.card .pip{--hole:#fff;display:grid;place-items:center;width:66%;height:84%;border-radius:50%;transform:rotate(26deg);background:radial-gradient(circle at 38% 30%,#fff,color-mix(in srgb,#fff 80%,var(--face)));box-shadow:inset 0 -4px 8px -4px color-mix(in srgb,var(--face) 55%,var(--plum)),0 2px 0 rgba(255,255,255,.55);color:color-mix(in srgb,var(--face) 28%,var(--plum))}
+.card .pip>*{transform:rotate(-26deg)}
+.card .pip b{font-size:calc(var(--w)*.42);font-weight:600;line-height:1;letter-spacing:-.03em}
+.card .pip .ci{width:calc(var(--w)*.4);height:calc(var(--w)*.4)}
+.card.wild .pip{--hole:var(--plum);background:radial-gradient(closest-side,var(--plum) 76%,transparent 79%),conic-gradient(from -26deg,var(--matcha) 0 25%,var(--pink) 0 50%,var(--taro) 0 75%,var(--vanila) 0);box-shadow:0 0 0 calc(var(--w)*.03) color-mix(in srgb,var(--cream) 85%,transparent);color:var(--cream)}
+.card.wild:not(.plus4) .pip .ci{width:calc(var(--w)*.46);height:calc(var(--w)*.46)}
+.card .corner{position:absolute;top:5%;left:7%;display:grid;justify-items:center;gap:2px;line-height:1}
+.card .corner b{font-size:calc(var(--w)*.17);font-weight:600}
+.card .corner .ci{width:calc(var(--w)*.15);height:calc(var(--w)*.15)}
+.card .corner.end{top:auto;left:auto;bottom:5%;right:7%;transform:rotate(180deg)}
+/* The back: plum with a stitched frame and the mascot on a cream medallion. */
+.card.back{--face:var(--plum);background:radial-gradient(90% 60% at 50% 0%,color-mix(in srgb,var(--pink) 45%,transparent),transparent 70%),radial-gradient(color-mix(in srgb,var(--pink) 45%,transparent) 1.2px,transparent 1.7px) 0 0/calc(var(--w)*.12) calc(var(--w)*.12),var(--plum)}
+.card.back:before{content:'';position:absolute;inset:6%;border-radius:calc(var(--w)*.1);border:1.5px dashed color-mix(in srgb,var(--cream) 55%,transparent)}
+.card.back:after{content:'';width:56%;aspect-ratio:1;border-radius:50%;background:url('/mascot.svg') center 62%/70% no-repeat,radial-gradient(circle at 40% 35%,#fff,var(--cream));box-shadow:0 0 0 calc(var(--w)*.03) color-mix(in srgb,var(--pink) 70%,transparent)}
 
 /* Table */
 .game-table{position:relative;display:grid;gap:18px;padding:22px;border-radius:32px;background:radial-gradient(70% 60% at 50% 45%,color-mix(in srgb,var(--paper) 70%,transparent),transparent 75%),linear-gradient(160deg,var(--matcha-soft),color-mix(in srgb,var(--pink) 18%,var(--cream)));border:1px solid var(--glass-edge);box-shadow:var(--shadow-soft)}
@@ -30,27 +45,29 @@
 .game-backs .card:first-child{margin-left:0}
 .game-center{display:flex;align-items:center;justify-content:center;gap:28px;flex-wrap:wrap;padding:8px 0}
 .game-pile{display:grid;justify-items:center;gap:6px;padding:6px;border-radius:20px;background:none;border:0;box-shadow:none;color:var(--muted)}
-.game-pile .card{--w:84px;box-shadow:4px 4px 0 color-mix(in srgb,var(--plum) 45%,transparent),8px 8px 0 color-mix(in srgb,var(--plum) 25%,transparent)}
+.game-pile .card{--w:84px;box-shadow:4px 4px 0 color-mix(in srgb,var(--plum) 45%,transparent),8px 8px 0 color-mix(in srgb,var(--plum) 25%,transparent);transition:transform .35s var(--spring)}
 .game-pile:not(:disabled):hover .card{transform:translateY(-4px) rotate(-3deg)}
-.game-pile .card{transition:transform .35s var(--spring)}
 .game-pile:not(:disabled) .card{outline:3px dashed color-mix(in srgb,var(--pink) 70%,transparent);outline-offset:4px}
 .game-pile:disabled{opacity:1;cursor:default}
 .game-pile small{font-size:12px;font-weight:700}
 .game-discard .card{--w:104px;transform:rotate(-4deg);box-shadow:0 18px 28px -16px color-mix(in srgb,var(--plum) 75%,transparent)}
-.game-flavor{flex-basis:100%;text-align:center;margin:0;font-weight:800;font-size:14px}
-.game-flavor:before{content:'';display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;vertical-align:-1px;background:var(--matcha);border:1.5px solid var(--plum)}
-.game-flavor.stroberi:before{background:var(--pink)}.game-flavor.taro:before{background:var(--taro)}.game-flavor.vanila:before{background:var(--vanila)}
+.game-flavor{display:inline-flex;align-items:center;justify-content:center;gap:8px;flex-basis:100%;margin:0;font-weight:800;font-size:14px}
+.game-flavor .ci{--hole:var(--paper);width:24px;height:24px;padding:4px;border-radius:50%;color:var(--plum);background:var(--face,var(--matcha));box-shadow:0 0 0 2px var(--paper),0 4px 10px -6px var(--plum)}
+.game-flavor.matcha{--face:var(--matcha)}.game-flavor.stroberi{--face:var(--pink)}.game-flavor.taro{--face:var(--taro)}.game-flavor.vanila{--face:var(--vanila)}
 .game-you{display:grid;gap:10px}
 .game-actions{display:flex;justify-content:center;gap:10px;min-height:0}
 .game-actions button{min-height:40px;padding:8px 16px;font-size:13px}
 #game-call[aria-pressed=true]{background:var(--pill-pink);color:var(--plum);border-color:transparent}
 .game-hand{display:flex;justify-content:safe center;gap:0;overflow-x:auto;padding:22px 12px 10px;scrollbar-width:thin}
-.game-hand .card{--w:80px;margin-left:-14px;cursor:pointer;border-radius:13px;transition:transform .3s var(--spring),box-shadow .3s,filter .3s}
+.game-hand .card{--w:80px;margin-left:-14px;cursor:pointer;border-radius:calc(var(--w)*.15);transition:transform .3s var(--spring),box-shadow .3s,filter .3s,opacity .3s}
 .game-hand .card:first-child{margin-left:0}
-.game-hand .card:disabled{filter:saturate(.8);opacity:.62;cursor:not-allowed;transform:translateY(6px)}
-.game-hand .card.playable{transform:translateY(-8px);box-shadow:0 0 0 3px var(--paper),0 14px 22px -12px color-mix(in srgb,var(--plum) 80%,transparent)}
+/* On your turn the cards you cannot play step back; while waiting, the whole hand stays clear to read. */
+.game-hand .card:disabled{filter:saturate(.7) brightness(.97);opacity:.7;cursor:not-allowed;transform:translateY(6px)}
+.game-hand.waiting .card:disabled{filter:none;opacity:1;transform:none;cursor:default}
+.game-hand .card.playable{transform:translateY(-10px);box-shadow:0 0 0 3px var(--paper),0 0 0 6px color-mix(in srgb,var(--pink) 50%,transparent),0 16px 24px -14px var(--plum)}
 .game-hand .card.playable:hover{transform:translateY(-18px) rotate(-3deg);z-index:2}
-.game-hand .card.fresh{box-shadow:0 0 0 3px var(--pink),0 14px 22px -12px var(--plum)}
+.game-hand .card.playable:active{transform:translateY(-8px) scale(.97)}
+.game-hand .card.fresh{box-shadow:0 0 0 3px var(--paper),0 0 0 6px var(--pink),0 14px 22px -12px var(--plum)}
 .game-hand .card:focus-visible{z-index:3;outline-offset:2px}
 .game-result{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:14px;border-radius:32px;background:color-mix(in srgb,var(--cream) 82%,transparent);backdrop-filter:blur(6px);text-align:center}
 .game-result p{margin:0;font:600 clamp(30px,5vw,48px)/1.1 var(--heading);color:var(--plum)}
@@ -66,12 +83,13 @@
 .game-log li:first-child{color:var(--plum);font-weight:700}
 .game-rules summary{font-weight:800;min-height:32px}
 .game-rules ul{margin:8px 0 0;padding-left:18px;font-size:13px;line-height:1.7}
-#game[aria-busy=true] .game-hand,#game[aria-busy=true] .game-pile{pointer-events:none}
+#game [aria-busy=true] .game-hand,#game [aria-busy=true] .game-pile{pointer-events:none}
 .flavor-options{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
-.flavor-options button{min-height:64px;border-radius:20px;font:600 18px var(--heading);color:var(--plum);background:var(--matcha)}
+.flavor-options button{--hole:var(--paper);gap:10px;min-height:64px;border-radius:20px;font:600 18px var(--heading);color:var(--plum);background:var(--matcha)}
+.flavor-options .ci{width:22px;height:22px}
 .flavor-options .stroberi{background:var(--pink)}
-.flavor-options .taro{background:color-mix(in srgb,var(--plum) 45%,var(--pink));color:var(--cream)}
-.flavor-options .vanila{background:color-mix(in srgb,var(--cream) 70%,#fff);border:1px solid var(--line)}
+.flavor-options .taro{background:var(--taro)}
+.flavor-options .vanila{background:var(--vanila)}
 header nav a.has-turn:after{content:'';position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 0 2px var(--cream)}
 @media(max-width:600px){
  .game-table{padding:16px 10px;border-radius:26px;gap:12px}
@@ -84,9 +102,7 @@ header nav a.has-turn:after{content:'';position:absolute;top:6px;right:6px;width
  .game-notes{grid-template-columns:1fr}
  .game-status{font-size:13px}
 }
-/* +4 cards and the open +2/+4 stack. */
-.card.plus4{background:conic-gradient(from 45deg,var(--matcha) 0 25%,var(--pink) 0 50%,var(--taro) 0 75%,var(--vanila) 0);color:var(--plum)}
-.card.plus4 .value{display:grid;place-items:center;width:62%;aspect-ratio:1;border-radius:30%;background:var(--plum);color:var(--cream);font-size:calc(var(--w)*.3);text-shadow:none}
+/* The open +2/+4 stack. */
 .game-discard-wrap{position:relative}
 .game-penalty{position:absolute;top:-12px;right:-16px;display:grid;place-items:center;min-width:44px;height:44px;padding:0 8px;border-radius:999px;background:var(--red);color:#fff;font:600 20px var(--heading);box-shadow:0 0 0 3px var(--paper),0 10px 18px -8px var(--red)}
 .game-pile.owed .card{outline-color:var(--red)}
@@ -102,7 +118,6 @@ header nav a.has-turn:after{content:'';position:absolute;top:6px;right:6px;width
  #game>.section-title{flex-wrap:nowrap;align-items:center;padding:14px 16px 14px 20px}
  #game>.section-title h2{font-size:28px}
  #game>.section-title p,#game>.section-title:after{display:none}
- #game>.section-title button{flex:none;padding:8px 14px;min-height:40px;font-size:12px}
  .game-bar{margin:12px 0 10px}
  .game-score{padding:6px 12px;font-size:13px}
  .game-status.yours{padding:5px 12px}
@@ -120,6 +135,6 @@ header nav a.has-turn:after{content:'';position:absolute;top:6px;right:6px;width
 .sound-toggle svg path:first-child{fill:currentColor;stroke:none}
 .sound-toggle .sound-off,.sound-toggle[aria-pressed=false] .sound-on{display:none}
 .sound-toggle[aria-pressed=false] .sound-off{display:block}
-.game-hand .card.selected{transform:translateY(-22px) rotate(-2deg);box-shadow:0 0 0 3px var(--plum),0 18px 26px -14px var(--plum);z-index:2}
+.game-hand .card.selected{transform:translateY(-22px) rotate(-2deg);box-shadow:0 0 0 3px var(--paper),0 0 0 6px var(--plum),0 18px 26px -14px var(--plum);z-index:2}
 .game-hand .card.selected:after{content:attr(data-order);position:absolute;top:6px;right:6px;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--plum);color:var(--cream);font:800 11px var(--body)}
-.game-hand.stacking .card.playable:not(.selected){box-shadow:0 0 0 3px var(--pink),0 14px 22px -12px color-mix(in srgb,var(--plum) 80%,transparent)}
+.game-hand.stacking .card.playable:not(.selected){box-shadow:0 0 0 3px var(--paper),0 0 0 6px var(--pink),0 14px 22px -12px color-mix(in srgb,var(--plum) 80%,transparent)}

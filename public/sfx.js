@@ -37,6 +37,7 @@ window.snoomySound = (() => {
   win:c=>[523.25,659.25,783.99,1046.5].forEach((f,i)=>tone(c,{type:'triangle',from:f,start:i*.11,length:.32,gain:.08})),
   lose:c=>[392,329.63,261.63].forEach((f,i)=>tone(c,{from:f,start:i*.16,length:.34,gain:.06})),
   pop:c=>tone(c,{from:420,to:980,length:.08,gain:.07}),
+  dice:c=>{swish(c,{length:.32,from:3200,to:900,gain:.05});for(let i=0;i<5;i++)tone(c,{type:'square',from:260+Math.random()*420,start:i*.055,length:.03,gain:.025});},
  };
  return {
   play(name,times=1){

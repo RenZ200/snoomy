@@ -32,27 +32,33 @@ window.SnoomyYouTube = (() => {
   player.command=(func,args=[])=>post({event:'command',func,args});
   player.receive=data=>{
    if(!player.ready&&data.event!=='onError'){
-    player.ready=true;clearInterval(player.timer);
+    player.ready=true;clearTimeout(player.timer);
     player.command('addEventListener',['onStateChange']);player.command('addEventListener',['onError']);
     onReady?.();
    }
    if(data.event==='onStateChange')setState(data.info);
    if(data.event==='onError')onError?.(data.info);
    if((data.event==='infoDelivery'||data.event==='initialDelivery')&&data.info){
-    if(typeof data.info.duration==='number')player.duration=data.info.duration;
-    if(typeof data.info.playerState==='number')setState(data.info.playerState);
-    if(typeof data.info.currentTime==='number'){player.time=data.info.currentTime;onTime?.(player.time);}
+    const info=data.info;
+    // Read the clock before reporting the state, so a pause or a skip is reported at the time it happened.
+    if(typeof info.duration==='number')player.duration=info.duration;
+    if(typeof info.currentTime==='number')player.time=info.currentTime;
+    if(typeof info.playbackRate==='number')player.rate=info.playbackRate;
+    if(typeof info.playerState==='number')setState(info.playerState);
+    if(typeof info.currentTime==='number')onTime?.(player.time);
    }
   };
-  // The player answers only after it hears "listening", so keep asking until it does.
+  // The player answers only after it hears "listening". Ask quickly at first, then keep asking slowly:
+  // on a weak phone connection YouTube's player can take well over 15 seconds to start.
   const listen=()=>{
-   clearInterval(player.timer);player.ready=false;
+   clearTimeout(player.timer);
    let tries=0;
-   player.timer=setInterval(()=>{post({event:'listening'});if(player.ready||++tries>60)clearInterval(player.timer);},250);
+   const ask=()=>{if(player.ready||player.gone)return;post({event:'listening'});player.timer=setTimeout(ask,++tries<40?250:1000);};
+   ask();
   };
   frame.addEventListener('load',listen);
   players.add(player);
-  player.destroy=()=>{clearInterval(player.timer);players.delete(player);frame.removeEventListener('load',listen);};
+  player.destroy=()=>{player.gone=true;clearTimeout(player.timer);players.delete(player);frame.removeEventListener('load',listen);};
   return player;
  }
 

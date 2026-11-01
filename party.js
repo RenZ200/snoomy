@@ -81,14 +81,19 @@ export function mountParty(app, db) {
   });
   app.post('/api/watch', async (req, res) => {
     const video = req.body?.action === 'load' ? parseYouTube(req.body.url) : null;
-    const [title, row] = await Promise.all([video ? lookupTitle(video.id) : null, db.prepare('SELECT state FROM watch_party WHERE id=1').get()]);
-    const next = watchAction(row?.state ? JSON.parse(row.state) : blank(), req.user, req.body, Date.now(), title);
-    // Playback is last-writer-wins; the version only tells clients that something changed.
-    const [updated, seen] = await Promise.all([
-      db.prepare('UPDATE watch_party SET state=?,version=version+1 WHERE id=1 RETURNING version').get(JSON.stringify(next)),
-      partnerSeen(req.user),
-    ]);
-    res.json(view(next, updated.version, req.user, seen));
+    const title = video ? await lookupTitle(video.id) : null;
+    // Both phones can act at the same moment (a reaction while the other pauses). Each write must start from the
+    // state it read, so a change made in between is re-read and kept instead of being overwritten.
+    for (let attempt = 1; ; attempt++) {
+      const row = await db.prepare('SELECT state,version FROM watch_party WHERE id=1').get();
+      const next = watchAction(row?.state ? JSON.parse(row.state) : blank(), req.user, req.body, Date.now(), title);
+      const [updated, seen] = await Promise.all([
+        db.prepare('UPDATE watch_party SET state=?,version=version+1 WHERE id=1 AND version=? RETURNING version').get(JSON.stringify(next), Number(row?.version || 0)),
+        partnerSeen(req.user),
+      ]);
+      if (updated) return res.json(view(next, updated.version, req.user, seen));
+      if (attempt === 5) fail('Ada perubahan bersamaan. Coba lagi.', 409);
+    }
   });
 
   const tracks = async () => (await db.prepare('SELECT id,video_id,title,added_by FROM music_tracks ORDER BY id').all())

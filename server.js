@@ -4,6 +4,7 @@ import { mountGoogle } from './google.js';
 import { mountBudget } from './budget.js';
 import { mountGame } from './game.js';
 import { mountParty } from './party.js';
+import { mountBoardGames } from './boardgames.js';
 import { createAuth } from './auth.js';
 import { openDatabase } from './database.js';
 import { dirname, resolve } from 'node:path';
@@ -90,6 +91,7 @@ app.delete('/api/tasks/:id',async (req,res)=>{const r=await db.prepare('DELETE F
 mountBudget(app,db);
 mountGallery(app,db);
 mountGame(app,db);
+mountBoardGames(app,db);
 mountParty(app,db);
 app.use(express.static(resolve(root,'public')));
 app.use('/api',(req,res)=>res.status(404).json({error:'Endpoint tidak ditemukan.'}));
