@@ -115,10 +115,9 @@ function mine(state, user) {
 export function play(state, user, { card: id, cards, flavor, call } = {}, rand = randomInt) {
   mine(state, user);
   const mode = modeOf(state);
-  // Only the Snoomy rules allow several cards with the same number or symbol in one move.
+  // Every mode allows several cards with the same number or symbol in one move; their effects add up.
   const ids = Array.isArray(cards) && cards.length ? cards : [id];
   if (ids.length > 12 || new Set(ids).size !== ids.length) fail('Pilihan kartunya tidak valid.');
-  if (ids.length > 1 && mode !== 'snoomy') fail('Di mode ini kartu dimainkan satu per satu.');
   const hand = state.hands[user];
   const chosen = ids.map(cardId => hand.find(c => c.id === cardId));
   if (chosen.some(c => !c)) fail('Kartu itu tidak ada di tanganmu.');
@@ -152,14 +151,14 @@ export function play(state, user, { card: id, cards, flavor, call } = {}, rand =
     state.penaltyType = c.v;
     say(state, rival, `${rival} harus ambil ${state.penalty} kartu atau membalas.`);
   } else if (draws && mode === 'ganas') {
-    state.penalty = (state.penalty || 0) + draws;
+    state.penalty = (state.penalty || 0) + draws * count;
     state.penaltyType = c.v; state.penaltyLast = draws;
     say(state, rival, `${rival} harus ambil ${state.penalty} kartu atau membalas dengan +${draws} ke atas.`);
   } else if (draws) {
     // Classic draw cards: the other player draws at once and misses the turn.
-    drawCards(state, rival, draws, rand);
+    drawCards(state, rival, draws * count, rand);
     again = true;
-    say(state, rival, `${rival} ambil ${draws} kartu dan kehilangan giliran.`);
+    say(state, rival, `${rival} ambil ${draws * count} kartu dan kehilangan giliran.`);
   }
   // With two players, Balik and Lewati Semua work like Lewati.
   if (['skip', 'reverse', 'skipall'].includes(c.v)) { again = true; say(state, rival, `${rival} kehilangan giliran.`); }
@@ -170,7 +169,8 @@ export function play(state, user, { card: id, cards, flavor, call } = {}, rand =
     }
     say(state, user, `${user} dan ${rival} bertukar ${count > 1 ? `${count} kartu` : 'satu kartu'} acak.`);
   }
-  if (mode === 'ganas' && (c.v === '7' || c.v === '0')) {
+  // Each 7 or 0 swaps the hands once, so an even stack swaps them back.
+  if (mode === 'ganas' && (c.v === '7' || c.v === '0') && count % 2) {
     [state.hands[user], state.hands[rival]] = [state.hands[rival], state.hands[user]];
     say(state, user, `${user} dan ${rival} bertukar seluruh kartu!`);
   }
@@ -179,7 +179,8 @@ export function play(state, user, { card: id, cards, flavor, call } = {}, rand =
     again = true;
     say(state, rival, `${rival} ambil ${got.length} kartu sampai dapat ${FLAVOR_NAME[flavor]}.`);
   }
-  if (c.v === 'flip') {
+  // Each Balik turns the cards over once, so an even stack ends on the same side.
+  if (c.v === 'flip' && count % 2) {
     state.side = state.side === 'dark' ? 'light' : 'dark';
     const turned = face(state, state.discard.at(-1));
     // A wild on the new side keeps a random flavour of that side.

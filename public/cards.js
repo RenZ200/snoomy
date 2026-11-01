@@ -10,7 +10,7 @@
  // Action cards are drawn as symbols; numbers and draw cards as type.
  const GLYPH=['skip','skipall','reverse','swap','flip','discard','wild','wildcolor','roulette'];
  const VALUE_NAME={plus1:'Tambah 1',plus2:'Tambah 2',cplus4:'Tambah 4',plus4:'Tambah 4',wrev4:'Putar Arah +4',wild2:'Ganti Rasa +2',plus5:'Tambah 5',plus6:'Tambah 6',plus10:'Tambah 10',skip:'Lewati',skipall:'Lewati Semua',reverse:'Putar Arah',swap:'Tukar Kartu',flip:'Balik',discard:'Buang Semua',wild:'Ganti Rasa',wildcolor:'Ambil Sampai Warna',roulette:'Rolet Warna'};
- const MODE={snoomy:{name:'Kartu Snoomy',note:'Aturan asli Snoomy: tumpuk kartu kembar, Tukar Kartu, +2 dan +4 menumpuk.'},klasik:{name:'Klasik',note:'Aturan kartu warna yang biasa: 108 kartu, +2 dan +4 langsung diambil.'},balik:{name:'Bolak-balik',note:'Kartu dua sisi. Kartu Balik membalik semuanya ke sisi gelap yang lebih galak.'},ganas:{name:'Tanpa Ampun',note:'168 kartu, +6 dan +10, tumpuk tambah tanpa batas. Pegang 25 kartu = kalah.'}};
+ const MODE={snoomy:{name:'Kartu Snoomy',note:'Aturan asli Snoomy: tumpuk kartu kembar, Tukar Kartu, +2 dan +4 menumpuk.'},klasik:{name:'Klasik',note:'Aturan kartu warna yang biasa: 108 kartu, +2 dan +4 langsung diambil. Kartu kembar boleh ditumpuk.'},balik:{name:'Bolak-balik',note:'Kartu dua sisi. Kartu Balik membalik semuanya ke sisi gelap yang lebih galak.'},ganas:{name:'Tanpa Ampun',note:'168 kartu, +6 dan +10, tumpuk tambah tanpa batas. Pegang 25 kartu = kalah.'}};
  // Wild cards have no flavour of their own, whatever the rule set.
  const isWild=card=>card.f==null;
  const ORDER=[...LIGHT,...DARK,null];
@@ -209,8 +209,8 @@
    selected=card.id===selected[0]?[]:selected.includes(card.id)?selected.filter(id=>id!==card.id):[...selected,card.id];
    sound('tap');renderHand();return;
   }
-  // Only Kartu Snoomy lets twins be played together.
-  if(game.mode==='snoomy'&&game.hand.some(other=>other.id!==card.id&&other.v===card.v)){selected=[card.id];sound('tap');renderHand();return;}
+  // Every mode lets twins be played together.
+  if(game.hand.some(other=>other.id!==card.id&&other.v===card.v)){selected=[card.id];sound('tap');renderHand();return;}
   commit([card.id],button.getBoundingClientRect());
  });
  stackPlay.addEventListener('click',()=>{

@@ -29,13 +29,12 @@ test('decks for every mode', () => {
   assert.equal(newMatch(newMatch(null, undefined, 'ganas')).mode, 'ganas', 'the next round keeps the mode');
 });
 
-test('klasik: draw cards are drawn at once, no stacking, reverse acts as skip, one card at a time', () => {
+test('klasik: draw cards are drawn at once, no answering, reverse acts as skip', () => {
   let s = table('klasik', { Moreno: [card('p', 'matcha', 'plus2'), card('a', 'matcha', '3'), card('b', 'taro', '3')], Cahya: [card('x', 'stroberi', 'plus2'), card('y', 'vanila', '1')] }, card('t', 'matcha', '5'));
   play(s, 'Moreno', { card: 'p' });
   assert.equal(s.hands.Cahya.length, 4, 'Cahya draws two at once');
   assert.equal(s.penalty, 0);
   assert.equal(s.turn, 'Moreno', 'and misses her turn');
-  assert.throws(() => play(s, 'Moreno', { cards: ['a', 'b'] }), /satu per satu/);
   s = table('klasik', { Moreno: [card('r', 'matcha', 'reverse'), card('a', 'taro', '3'), card('b', 'taro', '4')], Cahya: [card('y', 'vanila', '1')] }, card('t', 'matcha', '5'));
   play(s, 'Moreno', { card: 'r' });
   assert.equal(s.turn, 'Moreno');
@@ -100,6 +99,35 @@ test('tanpa ampun: stacking upward, drawing until a card fits, 7 swaps hands, bu
   assert.equal(s.wins.Moreno, 1);
 });
 
+test('every mode lets twins be played together, and their effects add up', () => {
+  // Klasik: two 3s at once, the last card's flavour leads; two +2 make the rival draw four.
+  let s = table('klasik', { Moreno: [card('a', 'matcha', '3'), card('b', 'taro', '3'), card('c', 'vanila', '9')], Cahya: [card('y', 'vanila', '1')] }, card('t', 'matcha', '5'));
+  play(s, 'Moreno', { cards: ['a', 'b'], call: true });
+  assert.deepEqual([s.hands.Moreno.map(c => c.id), s.flavor, s.turn], [['c'], 'taro', 'Cahya']);
+  assert.throws(() => play(s, 'Cahya', { cards: ['y', 'y'] }), /tidak valid/);
+  s = table('klasik', { Moreno: [card('p', 'matcha', 'plus2'), card('q', 'taro', 'plus2'), card('c', 'vanila', '9'), card('d', 'vanila', '8')], Cahya: [card('y', 'vanila', '1')] }, card('t', 'matcha', '5'));
+  play(s, 'Moreno', { cards: ['p', 'q'] });
+  assert.deepEqual([s.hands.Cahya.length, s.turn], [5, 'Moreno']);
+  assert.throws(() => play(s, 'Moreno', { cards: ['c', 'p'] }), /tidak ada di tanganmu/);
+
+  // Bolak-balik: two Balik cards turn the cards over twice, so the table stays light.
+  const two = (id, light, dark) => ({ id, light: { f: light[0], v: light[1] }, dark: { f: dark[0], v: dark[1] } });
+  s = table('balik', { Moreno: [two('f1', ['matcha', 'flip'], ['kopi', '5']), two('f2', ['taro', 'flip'], ['laut', '5']), two('x', ['vanila', '2'], ['jeruk', '2'])], Cahya: [two('y', ['vanila', '1'], ['jeruk', '7'])] }, two('t', ['matcha', '5'], ['laut', '6']));
+  play(s, 'Moreno', { cards: ['f1', 'f2'], call: true });
+  assert.deepEqual([s.side, s.flavor], ['light', 'taro']);
+  s = table('balik', { Moreno: [two('f1', ['matcha', 'flip'], ['kopi', '5']), two('x', ['vanila', '2'], ['jeruk', '2']), two('z', ['vanila', '3'], ['jeruk', '3'])], Cahya: [two('y', ['vanila', '1'], ['jeruk', '7'])] }, two('t', ['matcha', '5'], ['laut', '6']));
+  play(s, 'Moreno', { cards: ['f1'] });
+  assert.equal(s.side, 'dark');
+
+  // Tanpa Ampun: two +2 add four to the stack; two 7s swap the hands there and back.
+  s = table('ganas', { Moreno: [card('p', 'matcha', 'plus2'), card('q', 'taro', 'plus2'), card('c', 'vanila', '9')], Cahya: [card('y', 'vanila', '1'), card('k', 'taro', 'plus2')] }, card('t', 'matcha', '5'));
+  play(s, 'Moreno', { cards: ['p', 'q'], call: true });
+  assert.deepEqual([s.penalty, s.penaltyLast, view(s, 1, 'Cahya').playable], [4, 2, ['k']]);
+  s = table('ganas', { Moreno: [card('a', 'matcha', '7'), card('b', 'taro', '7'), card('c', 'vanila', '9'), card('d', 'vanila', '8')], Cahya: [card('y', 'vanila', '1')] }, card('t', 'matcha', '5'));
+  play(s, 'Moreno', { cards: ['a', 'b'] });
+  assert.deepEqual(s.hands.Moreno.map(c => c.id), ['c', 'd'], 'an even stack swaps the hands back');
+});
+
 test('every mode plays out to a winner without losing a card', () => {
   for (const mode of ['klasik', 'balik', 'ganas']) {
     const size = buildDeck(mode).length;
@@ -110,7 +138,10 @@ test('every mode plays out to a winner without losing a card', () => {
         const user = s.turn, hand = s.hands[user];
         const choice = hand.find(c => (!s.drawn || c.id === s.drawn) && playable(s, c));
         const colours = s.side === 'dark' ? DARK : FLAVORS;
-        if (choice) play(s, user, { card: choice.id, flavor: colours[moves % 4], call: hand.length === 2 });
+        if (choice) {
+          const group = round % 2 ? [choice, ...hand.filter(c => c !== choice && face(s, c).v === face(s, choice).v)] : [choice];
+          play(s, user, { cards: group.map(c => c.id), flavor: colours[moves % 4], call: hand.length - group.length === 1 });
+        }
         else if (s.drawn) pass(s, user);
         else draw(s, user);
         assert.equal(s.draw.length + s.discard.length + s.hands.Moreno.length + s.hands.Cahya.length, size, `${mode}: no card is lost`);

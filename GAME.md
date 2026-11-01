@@ -28,9 +28,11 @@ An original shedding card game.
 | Mode | Deck | Rules |
 |---|---|---|
 | **Kartu Snoomy** | 100 | The rules above. |
-| **Klasik** | 108: 0–9, Lewati, Putar Arah and +2 in each flavour; 4 Ganti Rasa, 4 +4 | +2/+4 are drawn at once and the player goes again (no answering). With two players, Lewati and Putar Arah both mean "go again". One card at a time. |
+| **Klasik** | 108: 0–9, Lewati, Putar Arah and +2 in each flavour; 4 Ganti Rasa, 4 +4 | +2/+4 are drawn at once and the player goes again (no answering). With two players, Lewati and Putar Arah both mean "go again". |
 | **Bolak-balik** | 112 double-sided cards | Light side: matcha/stroberi/taro/vanila with +1, +2 Ganti Rasa, Lewati, Putar Arah, Balik. Dark side: kopi/anggur/jeruk/laut with +5, Lewati Semua, Ambil Sampai Warna (the rival draws until the chosen colour turns up), Balik. **Balik** turns every card over. Each player sees the other side of the partner's cards. Draw cards are drawn at once. |
 | **Tanpa Ampun** | 168, with +6, +10, Putar Arah +4, Lewati Semua, Buang Semua, Rolet Warna | Draw cards stack with an equal or bigger draw card. With nothing to play you draw until a card fits. A 7 or 0 swaps whole hands. Buang Semua discards every card of that flavour. Rolet Warna: the rival draws until the chosen colour. Holding 25 cards loses the round. |
+
+**Twins stack in every mode**: tap one card, tap others with the same number or symbol, then **Mainkan**. Their effects add up: two +2 make the rival draw 4 (Klasik, Bolak-balik) or add 4 to the stack (Kartu Snoomy, Tanpa Ampun); each Balik turns the cards over and each 7/0 swaps the hands, so an even number lands back where it started.
 
 On the dark side the table turns to night and wild cards spin in the dark colours.
 
