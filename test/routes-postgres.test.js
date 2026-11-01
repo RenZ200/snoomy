@@ -8,6 +8,7 @@ import { mountGame } from '../game.js';
 import { mountBoardGames } from '../boardgames.js';
 import { mountReal, mountRealTick } from '../real.js';
 import { createPush } from '../push.js';
+import { mountChat } from '../chat.js';
 import webpush from 'web-push';
 
 // Production runs on PostgreSQL (Neon), where the adapter adds RETURNING id to inserts.
@@ -24,7 +25,7 @@ test('Nonton bareng, playlist, games and Real routes work on PostgreSQL', async 
   const call = async (key, user, body = {}, params = {}) => {
     let status = 200, payload;
     const res = { status(code) { status = code; return res; }, json(value) { payload = value; return res; }, set() { return res; }, end(value) { payload = value; return res; } };
-    try { await routes[key]({ user, body, params }, res); }
+    try { await routes[key]({ user, body, params, query: {} }, res); }
     catch (error) { status = error.status || 500; payload = { error: error.message }; }
     return { status, body: payload };
   };
@@ -39,6 +40,7 @@ test('Nonton bareng, playlist, games and Real routes work on PostgreSQL', async 
     push.mount(app);
     mountRealTick(app, db, { clock: () => clock, rand: () => 0, push });
     mountReal(app, db, { clock: () => clock, rand: () => 0, push });
+    mountChat(app, db, { clock: () => clock, push });
 
     let watch = await call('GET /api/watch', 'Moreno');
     assert.equal(watch.status, 200, watch.body?.error);
@@ -134,5 +136,16 @@ test('Nonton bareng, playlist, games and Real routes work on PostgreSQL', async 
     real = await call('GET /api/real', 'Cahya');
     assert.equal(real.body.streak, 1);
     assert.deepEqual([real.body.memories[0].Moreno.full, real.body.memories[0].Moreno.reactions], [true, { Cahya: '🔥' }]);
+
+    // Chat: RETURNING on insert, the read-marker upsert and the unread subquery.
+    const message = await call('POST /api/chat', 'Moreno', { text: 'halo dari postgres ♡' });
+    assert.equal(message.status, 201, message.body?.error);
+    assert.equal(typeof message.body.message.id, 'number');
+    assert.deepEqual(delivered.at(-1), ['https://push.example/pg', '💬 Moreno'], "Cahya's phone is told");
+    let chat = await call('GET /api/chat', 'Cahya');
+    assert.equal(chat.status, 200, chat.body?.error);
+    assert.equal(chat.body.unread, 1);
+    chat = await call('POST /api/chat/read', 'Cahya', { upTo: message.body.message.id });
+    assert.equal(chat.body.unread, 0);
   } finally { await db.close(); }
 });

@@ -413,7 +413,7 @@
   finally{notifyTest.disabled=false;}
  });
  // A tapped notification brings an open Snoomy window straight to Real.
- navigator.serviceWorker?.addEventListener('message',event=>{if(event.data?.type==='snoomy-open'&&event.data.hash)location.hash=event.data.hash;});
+ navigator.serviceWorker?.addEventListener('message',event=>{if(event.data?.type==='snoomy-open'&&event.data.hash&&event.data.hash!=='#chat')location.hash=event.data.hash;});
 
  document.addEventListener('snoomy-session',event=>{
   const next=event.detail?.user||null;
