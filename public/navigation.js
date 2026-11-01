@@ -5,7 +5,8 @@
  const home=['dashboard','overview','quick-links','google-calendar'];
  function route(event){
   const hash=location.hash.slice(1)||'dashboard';
-  const page=['calendar','todos','budgeting','gallery','game','watch'].includes(hash)?hash:'dashboard';
+  // Real lives at the top of Galeri, so #real opens Galeri.
+  const page=hash==='real'?'gallery':['calendar','todos','budgeting','gallery','game','watch'].includes(hash)?hash:'dashboard';
   document.body.dataset.view=page;
   document.body.classList.toggle('budgeting-mode',page==='budgeting');
   for(const section of main.children){
@@ -26,6 +27,7 @@
   });
   window.scrollTo({top:0,behavior:'instant'});
   if(hash==='google-calendar')document.querySelector('#google-calendar').scrollIntoView({block:'start',behavior:'instant'});
+  if(hash==='real')document.querySelector('#real')?.scrollIntoView({block:'start',behavior:'instant'});
   if(event){main.tabIndex=-1;main.focus({preventScroll:true});}
   document.dispatchEvent(new CustomEvent('snoomy-route',{detail:{page}}));
  }

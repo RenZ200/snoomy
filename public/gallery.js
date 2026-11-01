@@ -43,6 +43,6 @@
  };
  function updateFilters(){document.querySelectorAll('#gallery-filters button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.kind===kind)));}
  $('#gallery-filters').onclick=e=>{const b=e.target.closest('[data-kind]');if(!b)return;kind=b.dataset.kind;shown=12;updateFilters();render();};$('#gallery-more').onclick=()=>{shown+=12;render();};$('#gallery-refresh').onclick=load;
- document.addEventListener('snoomy-session',e=>{if(user===e.detail.user)return;user=e.detail.user;epoch++;items=[];grid.replaceChildren();lightbox.close();if(!busy)upload.close();$('#gallery-space').textContent='';if(user&&location.hash==='#gallery')load();});
+ document.addEventListener('snoomy-session',e=>{if(user===e.detail.user)return;user=e.detail.user;epoch++;items=[];grid.replaceChildren();lightbox.close();if(!busy)upload.close();$('#gallery-space').textContent='';if(user&&document.body.dataset.view==='gallery')load();});
  document.addEventListener('snoomy-route',e=>{if(e.detail.page==='gallery'&&user)load();else if(e.detail.page!=='gallery'){lightbox.close();if(!busy)upload.close();}});
 })();

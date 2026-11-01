@@ -1,0 +1,128 @@
+/* Real: today's two posts, the two-camera capture, the memories strip and the reminder banner. */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+/* Real sits at the top of Galeri, in its own panel under the album banner. */
+.real-block{margin:26px 0 30px;padding:22px;border-radius:32px;background:radial-gradient(80% 60% at 0% 0%,color-mix(in srgb,var(--pink) 16%,transparent),transparent 70%),var(--glass);border:1px solid var(--glass-edge);box-shadow:var(--shadow-soft);scroll-margin-top:calc(var(--header-height,80px) + 12px)}
+.real-head h2{margin:0;font-size:clamp(28px,3.4vw,40px)}
+.real-head p{max-width:52ch;margin:6px 0 0;font-size:15px;color:var(--muted)}
+.real-block .real-card{background:color-mix(in srgb,var(--paper) 78%,transparent)}
+.real-block .real-memories{margin-top:18px;background:color-mix(in srgb,var(--paper) 55%,transparent)}
+.real-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:16px 0 14px}
+.real-clock{margin:0;padding:8px 16px;border-radius:999px;background:var(--glass);border:1px solid var(--glass-edge);font-weight:800;font-size:14px;color:var(--plum)}
+.real-clock:empty{display:none}
+.real-clock.live{background:var(--pill-pink);border-color:transparent;font-variant-numeric:tabular-nums;animation:real-pulse 1.2s ease-in-out 3}
+@keyframes real-pulse{50%{transform:scale(1.04)}}
+.real-streak{margin:0;padding:8px 14px;border-radius:999px;background:var(--paper);font-weight:800;font-size:13px;color:var(--pink-deep);box-shadow:0 8px 16px -12px var(--plum)}
+.real-today{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
+.real-card{display:grid;gap:12px;padding:16px;border-radius:28px;background:var(--glass);border:1px solid var(--glass-edge);box-shadow:var(--shadow-soft)}
+.real-card.waiting{box-shadow:none}
+.real-card-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-height:34px}
+.real-card-head strong{font:600 18px var(--heading)}
+.real-card-head small{margin-left:auto;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--plum) 8%,transparent);font-size:12px;font-weight:800;color:var(--muted)}
+.real-card-head small.on-time{background:var(--pill-matcha);color:var(--plum)}
+.real-avatar{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;font:600 16px var(--heading);color:var(--plum);background:var(--matcha);box-shadow:0 0 0 2px var(--paper)}
+.real-avatar.stroberi{background:var(--pink)}
+
+/* A post: the big photo with the small one in its corner; tapping the small one swaps them. */
+.real-photo{position:relative;aspect-ratio:3/4;border-radius:22px;overflow:hidden;background:var(--plum);box-shadow:0 18px 34px -22px var(--plum)}
+.real-photo .real-main{display:block;width:100%;height:100%;object-fit:cover}
+.real-inset{position:absolute;top:12px;left:12px;display:block;width:30%;aspect-ratio:3/4;min-height:0;padding:0;border:3px solid var(--paper);border-radius:16px;overflow:hidden;background:var(--plum);box-shadow:0 10px 20px -8px rgba(0,0,0,.45)}
+.real-inset:hover{transform:scale(1.03);box-shadow:0 12px 22px -8px rgba(0,0,0,.5)}
+.real-inset img{display:block;width:100%;height:100%;object-fit:cover}
+.real-caption{margin:0;font-weight:700;font-size:15px;line-height:1.45;overflow-wrap:anywhere}
+.real-card-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.real-reacted{margin:0;font-size:13px;font-weight:700;color:var(--muted)}
+.real-save{min-height:38px;padding:7px 14px;font-size:12.5px}
+.real-react{display:flex;gap:6px;flex-wrap:wrap}
+.real-react button{width:42px;height:42px;min-height:42px;padding:0;border-radius:50%;font-size:20px;background:var(--paper);border:1px solid var(--glass-edge);box-shadow:none}
+.real-react button[aria-pressed=true]{background:var(--pill-pink);border-color:var(--pink-deep);transform:scale(1.08)}
+
+/* Waiting states keep the same 3:4 frame, so nothing jumps when a photo arrives. */
+.real-cta,.real-locked,.real-empty{aspect-ratio:3/4;border-radius:22px;display:grid;place-content:center;justify-items:center;gap:8px;padding:20px;text-align:center}
+.real-cta{width:100%;min-height:0;border:2px dashed color-mix(in srgb,var(--pink-deep) 45%,transparent);background:radial-gradient(70% 55% at 50% 40%,color-mix(in srgb,var(--pink) 22%,transparent),transparent 70%),var(--paper);color:var(--plum);box-shadow:none}
+.real-cta:hover{transform:translateY(-2px);box-shadow:0 14px 24px -16px var(--plum)}
+.real-cta:disabled{opacity:.8;cursor:default;transform:none;box-shadow:none}
+.real-cta strong{font:600 24px var(--heading)}
+.real-cta small{font-size:13px;font-weight:700;color:var(--muted)}
+.real-cta-ring{width:84px;height:84px;margin-bottom:12px;border-radius:50%;background:var(--paper);box-shadow:0 0 0 6px var(--plum),0 0 0 12px color-mix(in srgb,var(--pink) 55%,transparent)}
+.real-cta:disabled .real-cta-ring{box-shadow:0 0 0 6px color-mix(in srgb,var(--plum) 30%,transparent)}
+.real-locked{background:radial-gradient(60% 50% at 30% 30%,color-mix(in srgb,var(--pink) 55%,transparent),transparent 70%),radial-gradient(60% 50% at 70% 75%,color-mix(in srgb,var(--matcha) 55%,transparent),transparent 70%),color-mix(in srgb,var(--plum) 88%,var(--pink));color:var(--cream)}
+.real-locked strong{max-width:22ch;font:600 19px/1.3 var(--heading)}
+.real-locked small{font-size:13px;font-weight:700;opacity:.85}
+.real-lock-icon{font-size:38px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35))}
+.real-empty{border:1.5px dashed var(--line);background:color-mix(in srgb,var(--paper) 60%,transparent);color:var(--muted);font-weight:700}
+
+/* Memories */
+.real-memories{margin-top:26px;padding:18px 20px;border-radius:26px;background:var(--glass);border:1px solid var(--glass-edge)}
+.real-memories-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.real-memories-head h3{margin:0;font-size:20px}
+.real-memories-head p{margin:0;font-size:12.5px;font-weight:700;color:var(--muted)}
+.real-strip{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 10px;scroll-snap-type:x proximity}
+.real-tile{flex:0 0 auto;display:grid;justify-items:center;gap:6px;min-height:0;padding:8px;border-radius:18px;border:1px solid var(--glass-edge);background:var(--paper);color:var(--plum);box-shadow:none;scroll-snap-align:start}
+.real-tile:hover{box-shadow:0 12px 20px -14px var(--plum)}
+.real-tile-pics{display:grid;grid-template-columns:repeat(2,58px);gap:4px}
+.real-tile-pics img,.real-tile-missing{width:58px;aspect-ratio:3/4;border-radius:10px;object-fit:cover;background:color-mix(in srgb,var(--plum) 8%,transparent)}
+.real-tile-missing{display:grid;place-items:center;color:var(--muted);font-weight:800}
+.real-tile small{font-size:12px;font-weight:800}
+.real-day{width:min(760px,calc(100% - 24px))}
+.real-day-posts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+
+/* Camera: a dark sheet with a 3:4 viewfinder; full screen on phones. */
+.real-camera{width:min(460px,calc(100% - 24px));max-height:calc(100dvh - 24px);padding:14px;border:0;border-radius:30px;background:var(--plum);color:var(--cream)}
+.real-camera::backdrop{background:color-mix(in srgb,var(--plum) 70%,transparent)}
+.real-camera-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.real-camera-head h2{margin:0;font-size:24px;color:var(--cream)}
+.real-camera-timer{margin-right:auto;padding:4px 12px;border-radius:999px;background:var(--pill-pink);color:var(--plum);font-weight:800;font-size:13px;font-variant-numeric:tabular-nums}
+.real-camera-timer:empty{display:none}
+.real-camera .icon{margin-left:auto;color:var(--plum);background:var(--cream)}
+/* The 3:4 frame shrinks on short screens so the shutter and buttons always stay in view. */
+.real-viewfinder{position:relative;width:min(100%,calc((100dvh - 250px)*.75));margin-inline:auto;aspect-ratio:3/4;border-radius:22px;overflow:hidden;background:#000}
+.real-viewfinder video{display:block;width:100%;height:100%;object-fit:cover}
+.real-viewfinder video[hidden]{display:none}
+.real-viewfinder video.mirror{transform:scaleX(-1)}
+.real-viewfinder .real-photo{position:absolute;inset:0;aspect-ratio:auto;border-radius:0;box-shadow:none}
+.real-camera-note{position:absolute;left:12px;right:12px;bottom:12px;margin:0;padding:8px 12px;border-radius:14px;background:color-mix(in srgb,var(--plum) 75%,transparent);font-size:13px;font-weight:700;text-align:center}
+.real-camera-note:empty{display:none}
+.real-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+.real-flash.on{animation:real-flash .35s ease-out}
+@keyframes real-flash{0%{opacity:.85}100%{opacity:0}}
+.real-camera-controls{display:flex;justify-content:center;padding:16px 0 4px}
+.real-shutter{width:76px;height:76px;min-height:76px;padding:0;border-radius:50%;border:5px solid var(--cream);background:var(--pink);box-shadow:0 0 0 4px color-mix(in srgb,var(--pink) 45%,transparent)}
+.real-shutter:hover{transform:scale(1.05);box-shadow:0 0 0 6px color-mix(in srgb,var(--pink) 45%,transparent)}
+.real-shutter:active:not(:disabled){transform:scale(.92)}
+.real-shutter:disabled{opacity:.5;cursor:wait;transform:none}
+.real-send{display:grid;gap:10px;padding-top:12px}
+.real-send input{margin:0;border-radius:999px!important;padding-inline:16px}
+.real-send .form-actions{display:flex;justify-content:flex-end;gap:10px}
+.real-fallback{display:grid;gap:10px;padding-top:12px}
+.real-fallback p{margin:0;font-size:14px}
+.real-fallback .button{position:relative;justify-content:center}
+.real-fallback input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.real-camera-controls[hidden],.real-send[hidden],.real-fallback[hidden]{display:none}
+.real-camera[data-stage=fallback] .real-viewfinder{display:none}
+.real-fallback label.done{opacity:.6}
+.real-fallback label.done:after{content:' ✓'}
+
+/* Reminder banner, shown on any page while the two minutes run. */
+.real-alert{position:fixed;z-index:70;left:50%;top:calc(var(--header-height,72px) + 10px);transform:translateX(-50%);display:flex;align-items:center;gap:12px;width:min(520px,calc(100% - 24px));padding:10px 10px 10px 16px;border-radius:22px;background:var(--plum);color:var(--cream);box-shadow:0 22px 40px -18px var(--plum)}
+.real-alert[hidden]{display:none}
+.real-alert-bolt{font-size:26px}
+.real-alert-text{display:grid;flex:1;min-width:0}
+.real-alert-text strong{font:600 18px var(--heading)}
+.real-alert-text small{font-size:12.5px;opacity:.85;font-variant-numeric:tabular-nums}
+.real-alert .button{min-height:40px;padding:8px 14px;font-size:13px;white-space:nowrap}
+.real-alert .icon{width:36px;height:36px;min-width:36px;color:var(--plum);background:var(--cream)}
+
+@media(max-width:700px){
+ .real-today,.real-day-posts{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+ .real-block{margin:18px -4px 22px;padding:14px 12px;border-radius:26px}
+ .real-head p{font-size:13.5px}
+ .real-bar{margin:12px 0 10px}
+ .real-card{padding:12px;border-radius:24px}
+ .real-camera{width:100%;max-width:none;height:100dvh;max-height:none;margin:0;inset:0;border-radius:0;padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom));overflow:auto}
+ .real-viewfinder{border-radius:18px}
+ .real-alert{gap:8px;padding:8px 8px 8px 12px}
+ .real-alert-text strong{font-size:16px}
+ .real-alert .button{padding:8px 12px}
+}

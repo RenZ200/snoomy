@@ -88,7 +88,9 @@
    flow(tl,'.overview > article, #google-calendar',{y:30},.42,{stagger:.08});
    flow(tl,'.calendar-toolbar > *, #calendar > .hint, .task-toolbar > *, .gallery-bar',{y:14},.3,{stagger:.05,duration:.55});
    tl.add(()=>{context.weekIn();context.tasksIn();},.36);
-   flow(tl,'.game-bar, .game-table:not([hidden]), .game-empty:not([hidden]), .game-notes',{y:24},.32,{stagger:.07});
+   flow(tl,'.game-picker > *',{y:20,scale:.96},.3,{stagger:.05,ease:'back.out(1.4)'});
+   flow(tl,'.game-bar, .game-table:not([hidden]), .game-empty:not([hidden]), .game-notes, .board-table:not([hidden]), .board-empty:not([hidden])',{y:24},.32,{stagger:.07});
+   flow(tl,'.real-bar, .real-card, .real-memories:not([hidden])',{y:24},.32,{stagger:.07});
    flow(tl,'.watch-form, .watch-bar, .watch-stage, .watch-react',{y:24},.32,{stagger:.07});
    flow(tl,'.gallery-card, .budget-tabs, .budget-tools, .money-grid article, .budget-card',{y:26},.4,{stagger:.06});
   });

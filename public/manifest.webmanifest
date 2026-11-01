@@ -16,6 +16,7 @@
     { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
+    { "name": "Real hari ini", "url": "/#real", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "Jadwal kita", "url": "/#calendar", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "To-do bareng", "url": "/#todos", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "Budgeting", "url": "/#budgeting", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }

@@ -6,10 +6,11 @@ import { postgresAdapter } from '../database.js';
 import { mountParty } from '../party.js';
 import { mountGame } from '../game.js';
 import { mountBoardGames } from '../boardgames.js';
+import { mountReal } from '../real.js';
 
 // Production runs on PostgreSQL (Neon), where the adapter adds RETURNING id to inserts.
 // These checks drive the real route handlers against PGlite so SQLite-only assumptions show up here.
-test('Nonton bareng, playlist, card and board game routes work on PostgreSQL', async () => {
+test('Nonton bareng, playlist, games and Real routes work on PostgreSQL', async () => {
   process.env.SNOOMY_OFFLINE = '1';
   const engine = new PGlite();
   const db = postgresAdapter({
@@ -20,7 +21,7 @@ test('Nonton bareng, playlist, card and board game routes work on PostgreSQL', a
   const app = Object.fromEntries(['get', 'post', 'delete'].map(method => [method, (path, handler) => { routes[`${method.toUpperCase()} ${path}`] = handler; }]));
   const call = async (key, user, body = {}, params = {}) => {
     let status = 200, payload;
-    const res = { status(code) { status = code; return res; }, json(value) { payload = value; return res; } };
+    const res = { status(code) { status = code; return res; }, json(value) { payload = value; return res; }, set() { return res; }, end(value) { payload = value; return res; } };
     try { await routes[key]({ user, body, params }, res); }
     catch (error) { status = error.status || 500; payload = { error: error.message }; }
     return { status, body: payload };
@@ -30,6 +31,8 @@ test('Nonton bareng, playlist, card and board game routes work on PostgreSQL', a
     mountParty(app, db);
     mountGame(app, db);
     mountBoardGames(app, db);
+    let clock = Date.parse('2026-11-01T09:00:00Z'); // 16.00 WIB; with rand 0 the moment was 09.00 WIB
+    mountReal(app, db, { clock: () => clock, rand: () => 0 });
 
     let watch = await call('GET /api/watch', 'Moreno');
     assert.equal(watch.status, 200, watch.body?.error);
@@ -91,5 +94,27 @@ test('Nonton bareng, playlist, card and board game routes work on PostgreSQL', a
     summary = await call('GET /api/games', 'Moreno');
     assert.equal(summary.body.games.four.status, 'playing');
     assert.equal(typeof summary.body.games.four.yourTurn, 'boolean');
+
+    // Real: BIGINT moments, ON CONFLICT, the kept flag and the both-posted streak query.
+    const jpeg = size => `data:image/jpeg;base64,${Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(size, 9)]).toString('base64')}`;
+    const shot = { main: jpeg(2000), inset: jpeg(600), thumb: jpeg(200) };
+    let real = await call('GET /api/real/status', 'Moreno');
+    assert.equal(real.status, 200, real.body?.error);
+    assert.deepEqual([real.body.started, real.body.at], [true, Date.parse('2026-11-01T02:00:00Z')]);
+    const posted = await call('POST /api/real', 'Moreno', shot);
+    assert.equal(posted.status, 201, posted.body?.error);
+    assert.deepEqual([posted.body.mine.late, posted.body.mine.full], [7 * 3600000, true]);
+    const photo = { id: String(posted.body.mine.id), kind: 'main' };
+    assert.equal((await call('GET /api/real/:id/:kind', 'Cahya', {}, photo)).status, 403);
+    assert.equal((await call('POST /api/real', 'Moreno', shot)).status, 409);
+    assert.equal((await call('POST /api/real', 'Cahya', shot)).status, 201);
+    const bytes = await call('GET /api/real/:id/:kind', 'Cahya', {}, photo);
+    assert.equal(bytes.status, 200);
+    assert.ok(Buffer.isBuffer(bytes.body) && bytes.body[0] === 0xff);
+    assert.deepEqual((await call('POST /api/real/:id/react', 'Cahya', { emoji: '🔥' }, { id: photo.id })).body.reactions, { Cahya: '🔥' });
+    clock += 86400000;
+    real = await call('GET /api/real', 'Cahya');
+    assert.equal(real.body.streak, 1);
+    assert.deepEqual([real.body.memories[0].Moreno.full, real.body.memories[0].Moreno.reactions], [true, { Cahya: '🔥' }]);
   } finally { await db.close(); }
 });

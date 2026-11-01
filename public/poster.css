@@ -211,6 +211,8 @@ body[data-user] .profile:before{content:'';display:inline-grid;place-items:cente
 body[data-user=Moreno] .profile:before{content:'M'}
 .profile{white-space:nowrap}
 @media(min-width:1001px) and (max-width:1180px){header nav .nav-extra{display:none}header nav a{padding-inline:12px}}
+/* Small tablets: without the little extras ("kita", "bareng") the menu stays on one line. */
+@media(min-width:601px) and (max-width:720px){header nav .nav-extra{display:none}}
 body[data-user=Cahya] .profile:before{content:'C';background:var(--pill-pink)}
 .quick-links{grid-template-columns:repeat(4,1fr)}
 .quick-links a:nth-child(4) svg{background:linear-gradient(135deg,var(--matcha),var(--pink))!important}

@@ -5,6 +5,7 @@ import { mountBudget } from './budget.js';
 import { mountGame } from './game.js';
 import { mountParty } from './party.js';
 import { mountBoardGames } from './boardgames.js';
+import { mountReal } from './real.js';
 import { createAuth } from './auth.js';
 import { openDatabase } from './database.js';
 import { dirname, resolve } from 'node:path';
@@ -22,6 +23,8 @@ const auth = createAuth(db);
 app.get('/health', (req,res) => res.json({ok:true}));
 app.disable('x-powered-by');
 app.use('/api/gallery', express.json({ limit: '4200kb' }));
+// A Real post carries two compressed photos and a preview.
+app.use('/api/real', express.json({ limit: '1600kb' }));
 app.use(express.json({ limit: '350kb' }));
 app.use((req,res,next) => {
  res.set('X-Content-Type-Options','nosniff');
@@ -93,6 +96,7 @@ mountGallery(app,db);
 mountGame(app,db);
 mountBoardGames(app,db);
 mountParty(app,db);
+mountReal(app,db);
 app.use(express.static(resolve(root,'public')));
 app.use('/api',(req,res)=>res.status(404).json({error:'Endpoint tidak ditemukan.'}));
 app.use((err,req,res,next)=>{if(!err.status)console.error('Permintaan server gagal:',err.code || 'internal');res.status(err.status||500).json({error:err.status?err.message:'Server sedang bermasalah.'});});
