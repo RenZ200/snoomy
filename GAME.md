@@ -21,6 +21,19 @@ An original shedding card game.
 - When a move would leave you with one card, press **Satu lagi ♡** before playing (the button appears then). Forgetting costs two cards.
 - Empty hand wins the round. Wins are tallied and the loser starts the next round.
 
+### Card modes
+
+**Main baru** (and **Mulai ulang** mid-round) asks which rule set to play; **Main lagi** keeps the current one. The chip next to the score shows the mode, and **Cara main** shows that mode's rules. The names are Snoomy's own.
+
+| Mode | Deck | Rules |
+|---|---|---|
+| **Kartu Snoomy** | 100 | The rules above. |
+| **Klasik** | 108: 0–9, Lewati, Putar Arah and +2 in each flavour; 4 Ganti Rasa, 4 +4 | +2/+4 are drawn at once and the player goes again (no answering). With two players, Lewati and Putar Arah both mean "go again". One card at a time. |
+| **Bolak-balik** | 112 double-sided cards | Light side: matcha/stroberi/taro/vanila with +1, +2 Ganti Rasa, Lewati, Putar Arah, Balik. Dark side: kopi/anggur/jeruk/laut with +5, Lewati Semua, Ambil Sampai Warna (the rival draws until the chosen colour turns up), Balik. **Balik** turns every card over. Each player sees the other side of the partner's cards. Draw cards are drawn at once. |
+| **Tanpa Ampun** | 168, with +6, +10, Putar Arah +4, Lewati Semua, Buang Semua, Rolet Warna | Draw cards stack with an equal or bigger draw card. With nothing to play you draw until a card fits. A 7 or 0 swaps whole hands. Buang Semua discards every card of that flavour. Rolet Warna: the rival draws until the chosen colour. Holding 25 cards loses the round. |
+
+On the dark side the table turns to night and wild cards spin in the dark colours.
+
 Card design (2026-11-01): printed-card faces with the value in a tilted oval and the value plus flavour symbol in two corners. Each flavour has its own symbol (matcha flower, stroberi heart, taro sparkle, vanila pearl), so colour is never the only cue. Taro is a lilac (`#a486d6`) and vanila a custard yellow (`#f1db97`) so all four stay apart, and plum ink reads on each. Ganti Rasa and +4 are plum cards with a four-flavour ring. The back has a stitched frame and the mascot on a cream medallion. While it is the other player's turn your hand stays at full colour; on your turn the cards you cannot play step back.
 
 ## Ludo
@@ -40,10 +53,10 @@ Snakes and ladders from 1 to 100. Ladders: 3→22, 8→30, 28→55, 36→44, 51�
 
 ## Implementation
 
-- `game.js` holds Kartu Snoomy's rules and its `/api/game…` routes; the match lives in the one-row `card_game` table. Each player only receives their own hand; the draw pile order is never sent.
+- `game.js` holds the card rules for all four modes (`buildDeck`, `newMatch`, `play`, `draw`, `pass`, `view`; Bolak-balik cards are `{light, dark}` pairs read through `face`) and its `/api/game…` routes; the match lives in the one-row `card_game` table. Each player only receives their own hand; the draw pile order is never sent.
 - `games/ludo.js`, `games/four.js` and `games/snakes.js` hold the other rules as pure functions (`newMatch`, `act`, `view`). `boardgames.js` mounts `GET /api/games` (a short status of all four games for the picker), `GET /api/games/:name`, `POST /api/games/:name/new` and `POST /api/games/:name/move`. Matches are stored as JSON in `board_games` (one row per game, in both schema files).
 - Every write checks the row version, so a double tap or a move from the other phone gets 409 and the client reloads. Dice are rolled on the server with `crypto.randomInt`.
 - `public/games.js` is the picker, the shared reminders and the small client the board games share (polling, sending moves with their version, score, status, start and result). `public/cards.js`, `public/ludo.js`, `public/four.js` and `public/snakes.js` draw each game; `public/cards.css` and `public/boards.css` style them. Flavour and card symbols come from one SVG sprite at the end of `index.html`.
 - Movement is animated with GSAP when it is available and motion is allowed: dice rolls, tokens hopping square by square, captures, ladders and snakes, falling discs. Without it (or with reduced motion) the board simply shows the new position.
 - Sound effects are synthesised with Web Audio in `public/sfx.js` (no audio files): card play, draw, dice, your turn, incoming +2/+4, win and lose. The speaker button on the card table mutes them per device.
-- Tests: `test/game.test.js` (Kartu Snoomy), `test/boardgames.test.js` (Ludo, Empat Sejajar, Ular Tangga rules) and `test/routes-postgres.test.js` (all game routes on PostgreSQL, including stale versions).
+- Tests: `test/game.test.js` (Kartu Snoomy), `test/modes.test.js` (Klasik, Bolak-balik, Tanpa Ampun, plus full random matches per mode), `test/boardgames.test.js` (Ludo, Empat Sejajar, Ular Tangga rules) and `test/routes-postgres.test.js` (all game routes on PostgreSQL, including stale versions).

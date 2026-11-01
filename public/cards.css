@@ -138,3 +138,41 @@ header nav a.has-turn:after{content:'';position:absolute;top:6px;right:6px;width
 .game-hand .card.selected{transform:translateY(-22px) rotate(-2deg);box-shadow:0 0 0 3px var(--paper),0 0 0 6px var(--plum),0 18px 26px -14px var(--plum);z-index:2}
 .game-hand .card.selected:after{content:attr(data-order);position:absolute;top:6px;right:6px;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--plum);color:var(--cream);font:800 11px var(--body)}
 .game-hand.stacking .card.playable:not(.selected){box-shadow:0 0 0 3px var(--paper),0 0 0 6px var(--pink),0 14px 22px -12px color-mix(in srgb,var(--plum) 80%,transparent)}
+
+/* Card modes. The dark side of Bolak-balik has its own four colours; on a dark card the wild colours follow them. */
+:root{--kopi:#8a5a3c;--anggur:#5b2a6e;--jeruk:#f08a3c;--laut:#2f8f8a}
+.cs-cut{fill:none;stroke:var(--hole,#fff);stroke-width:1.8;stroke-linecap:round}
+.cs-stem{stroke:currentColor}
+.card.dark{--matcha:var(--kopi);--pink:var(--anggur);--taro:var(--jeruk);--vanila:var(--laut)}
+.card.kopi{--face:var(--kopi);--ink:var(--cream)}
+.card.anggur{--face:var(--anggur);--ink:var(--cream)}
+.card.jeruk{--face:var(--jeruk)}
+.card.laut{--face:var(--laut);--ink:var(--cream)}
+.card.wild.dark{background:radial-gradient(90% 60% at 20% 0%,color-mix(in srgb,var(--jeruk) 30%,transparent),transparent 65%),radial-gradient(color-mix(in srgb,var(--cream) 18%,transparent) 1px,transparent 1.5px) 0 0/calc(var(--w)*.13) calc(var(--w)*.13),#17101a}
+.card.long .pip b{font-size:calc(var(--w)*.3);letter-spacing:-.06em}
+.card.long .corner b{font-size:calc(var(--w)*.13)}
+.game-flavor.kopi{--face:var(--kopi)}.game-flavor.anggur{--face:var(--anggur)}.game-flavor.jeruk{--face:var(--jeruk)}.game-flavor.laut{--face:var(--laut)}
+.game-flavor.kopi .ci,.game-flavor.anggur .ci,.game-flavor.laut .ci{color:var(--cream);--hole:var(--face)}
+.flavor-options .kopi{background:var(--kopi);color:var(--cream)}
+.flavor-options .anggur{background:var(--anggur);color:var(--cream)}
+.flavor-options .jeruk{background:var(--jeruk)}
+.flavor-options .laut{background:var(--laut);color:var(--cream)}
+.flavor-options .kopi,.flavor-options .anggur,.flavor-options .laut{--hole:var(--plum)}
+/* Bolak-balik: your partner's cards show their other side, small and without corners. */
+.game-backs.faces .card{--w:40px;margin-left:-12px}
+.game-backs.faces .card:first-child{margin-left:0}
+.game-backs.faces .card .corner{display:none}
+/* The table turns to night while the dark side is up. */
+#play-cards[data-side=dark] .game-table{background:radial-gradient(70% 60% at 50% 45%,color-mix(in srgb,var(--jeruk) 22%,transparent),transparent 75%),linear-gradient(160deg,color-mix(in srgb,var(--anggur) 55%,var(--plum)),color-mix(in srgb,var(--laut) 45%,var(--plum)))}
+#play-cards[data-side=dark] .game-table #game-opponent-name,#play-cards[data-side=dark] .game-table .game-pile,#play-cards[data-side=dark] .game-table .game-flavor,#play-cards[data-side=dark] .game-table #game-you-name{color:var(--cream)}
+.game-bar-start{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.game-mode{padding:6px 12px;border-radius:999px;background:var(--pill-pink);color:var(--plum);font:800 12.5px var(--body)}
+.game-mode[hidden]{display:none}
+.mode-options{display:grid;gap:10px;margin-top:8px}
+.mode-options button{display:grid;justify-items:start;gap:2px;min-height:64px;padding:12px 16px;border-radius:20px;text-align:left;color:var(--plum);background:var(--pill-matcha)}
+.mode-options button strong{font:600 18px var(--heading)}
+.mode-options button small{font-size:12.5px;font-weight:700;color:color-mix(in srgb,var(--plum) 75%,transparent)}
+.mode-options .mode-klasik{background:color-mix(in srgb,var(--vanila) 70%,var(--paper))}
+.mode-options .mode-balik{background:linear-gradient(110deg,color-mix(in srgb,var(--taro) 55%,var(--paper)) 50%,color-mix(in srgb,var(--laut) 45%,var(--paper)) 50%)}
+.mode-options .mode-ganas{background:color-mix(in srgb,var(--red) 30%,var(--paper))}
+.mode-options button[aria-current=true]{box-shadow:0 0 0 3px var(--pink)}

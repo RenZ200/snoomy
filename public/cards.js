@@ -1,23 +1,27 @@
-// Kartu Snoomy table: polls the shared match and sends one move at a time.
+// Kartu Snoomy table: polls the shared match and sends one move at a time. Four rule sets share the table:
+// Kartu Snoomy, Klasik, Bolak-balik (double-sided cards with a dark side) and Tanpa Ampun.
 (() => {
  const $=s=>document.querySelector(s);
  const section=$('#game');
  if(!section)return;
- const FLAVOR={matcha:{name:'Matcha'},stroberi:{name:'Stroberi'},taro:{name:'Taro'},vanila:{name:'Vanila'}};
- const VALUE={plus2:'+2',skip:'⊘',swap:'⇄',wild:'★',plus4:'+4'};
- // Skip, swap and wild are drawn as symbols; numbers and +2/+4 as type.
- const GLYPH=['skip','swap','wild'];
- const VALUE_NAME={plus2:'Tambah 2',skip:'Lewati',swap:'Tukar Kartu',wild:'Ganti Rasa',plus4:'Tambah 4'};
- const WILD=['wild','plus4'];
- const ORDER=['matcha','stroberi','taro','vanila',null];
+ const FLAVOR={matcha:{name:'Matcha'},stroberi:{name:'Stroberi'},taro:{name:'Taro'},vanila:{name:'Vanila'},kopi:{name:'Kopi'},anggur:{name:'Anggur'},jeruk:{name:'Jeruk'},laut:{name:'Laut'}};
+ const LIGHT=['matcha','stroberi','taro','vanila'],DARK=['kopi','anggur','jeruk','laut'];
+ const VALUE={plus1:'+1',plus2:'+2',cplus4:'+4',plus4:'+4',wrev4:'+4',wild2:'+2',plus5:'+5',plus6:'+6',plus10:'+10',skip:'⊘',skipall:'⊘⊘',reverse:'⇆',swap:'⇄',flip:'◐',discard:'≡',wild:'★',wildcolor:'◎',roulette:'◎'};
+ // Action cards are drawn as symbols; numbers and draw cards as type.
+ const GLYPH=['skip','skipall','reverse','swap','flip','discard','wild','wildcolor','roulette'];
+ const VALUE_NAME={plus1:'Tambah 1',plus2:'Tambah 2',cplus4:'Tambah 4',plus4:'Tambah 4',wrev4:'Putar Arah +4',wild2:'Ganti Rasa +2',plus5:'Tambah 5',plus6:'Tambah 6',plus10:'Tambah 10',skip:'Lewati',skipall:'Lewati Semua',reverse:'Putar Arah',swap:'Tukar Kartu',flip:'Balik',discard:'Buang Semua',wild:'Ganti Rasa',wildcolor:'Ambil Sampai Warna',roulette:'Rolet Warna'};
+ const MODE={snoomy:{name:'Kartu Snoomy',note:'Aturan asli Snoomy: tumpuk kartu kembar, Tukar Kartu, +2 dan +4 menumpuk.'},klasik:{name:'Klasik',note:'Aturan kartu warna yang biasa: 108 kartu, +2 dan +4 langsung diambil.'},balik:{name:'Bolak-balik',note:'Kartu dua sisi. Kartu Balik membalik semuanya ke sisi gelap yang lebih galak.'},ganas:{name:'Tanpa Ampun',note:'168 kartu, +6 dan +10, tumpuk tambah tanpa batas. Pegang 25 kartu = kalah.'}};
+ // Wild cards have no flavour of their own, whatever the rule set.
+ const isWild=card=>card.f==null;
+ const ORDER=[...LIGHT,...DARK,null];
  const hand=$('#game-hand'),top=$('#game-top'),drawPile=$('#game-draw'),backs=$('#game-opponent-hand'),pick=$('#game-flavor-pick'),callButton=$('#game-call');
  const stackPlay=$('#game-stack-play'),stackCancel=$('#game-stack-cancel'),soundButton=$('#game-sound'),panel=$('#play-cards');
- let game=null,user=null,busy=false,timer,pendingWild=null,from=null,calling=false,selected=[],played=1;
+ let game=null,user=null,busy=false,timer,pendingWild=null,from=null,calling=false,selected=[],played=1,restarting=false;
  const moving=()=>window.gsap&&!matchMedia('(prefers-reduced-motion: reduce)').matches;
  // The table is "open" while Permainan shows Kartu Snoomy; other games and pages are covered by the game picker.
  const onPage=()=>document.body.dataset.view==='game'&&(window.SnoomyGames?.active()??'cards')==='cards';
  const el=(tag,text,className)=>{const node=document.createElement(tag);if(text!=null)node.textContent=text;if(className)node.className=className;return node;};
- const cardName=card=>WILD.includes(card.v)?VALUE_NAME[card.v]:`${FLAVOR[card.f].name} ${VALUE_NAME[card.v]||card.v}`;
+ const cardName=card=>isWild(card)?VALUE_NAME[card.v]:`${FLAVOR[card.f].name} ${VALUE_NAME[card.v]||card.v}`;
  const notify=message=>window.toast?window.toast(message):alert(message);
  const sound=(name,times)=>window.snoomySound?.play(name,times);
  // Browsers only allow vibration after the person has tapped the page at least once.
@@ -34,13 +38,15 @@
   svg.setAttribute('class','ci');svg.setAttribute('aria-hidden','true');use.setAttribute('href',`#cs-${name}`);svg.append(use);return svg;
  };
  // A printed card: value and flavour symbol in two corners, the value large in a tilted oval.
- function face(card,tag='div'){
-  const wild=WILD.includes(card.v);
-  const node=el(tag,null,`card ${card.f||'wild'}${card.v==='plus4'?' plus4':''}`);
+ // Dark-side cards (Bolak-balik) remap the four colours, so their wild cards spin in the dark colours.
+ function face(card,tag='div',side=game?.side){
+  const wild=isWild(card);
+  const node=el(tag,null,`card ${card.f||'wild'}${wild&&!GLYPH.includes(card.v)?' plus4':''}${side==='dark'?' dark':''}`);
   const value=()=>GLYPH.includes(card.v)?symbol(card.v):el('b',VALUE[card.v]||card.v);
   const corner=className=>{const box=el('span',null,className);box.append(value());if(card.v!=='wild')box.append(symbol(wild?'wild':card.f));return box;};
   const pip=el('span',null,'pip');pip.append(value());
-  node.dataset.id=card.id;
+  if(card.id)node.dataset.id=card.id;
+  if(!GLYPH.includes(card.v)&&(VALUE[card.v]||card.v).length>2)node.classList.add('long');
   node.setAttribute('aria-label',cardName(card));
   node.append(corner('corner'),pip,corner('corner end'));
   for(const part of node.children)part.setAttribute('aria-hidden','true');
@@ -57,7 +63,13 @@
   // The game picker keeps the menu dot, tab title and Beranda shortcut up to date for every game.
   window.SnoomyGames?.report('cards',game);
   $('#game-score').replaceChildren(el('span',`${game.you} ${game.wins[game.you]}`,'you'),el('span','–'),el('span',`${game.wins[game.opponent]} ${game.opponent}`));
-  const status=game.status==='none'?'Belum ada ronde. Mulai satu ♡':game.status==='finished'?`${game.winner===game.you?'Kamu':game.winner} menang ronde ${game.round} ♡`:yourTurn?(game.penalty?`Balas dengan ${game.penaltyType==='plus4'?'+4':'+2 atau +4'}, atau ambil ${game.penalty} kartu.`:game.drawn?'Kartu barumu cocok. Mainkan atau simpan.':'Giliranmu ✦'):`Menunggu ${game.turn}…`;
+  const answer=game.mode==='ganas'?`kartu tambah minimal +${game.penaltyLast}`:game.penaltyType==='plus4'?'+4':'+2 atau +4';
+  const status=game.status==='none'?'Belum ada ronde. Mulai satu ♡':game.status==='finished'?`${game.winner===game.you?'Kamu':game.winner} menang ronde ${game.round} ♡`:yourTurn?(game.penalty?`Balas dengan ${answer}, atau ambil ${game.penalty} kartu.`:game.drawn?'Kartu barumu cocok. Mainkan atau simpan.':'Giliranmu ✦'):`Menunggu ${game.turn}…`;
+  const mode=game.mode||'snoomy';
+  $('#game-mode').textContent=`${MODE[mode].name}${mode==='balik'&&game.status!=='none'?` · sisi ${game.side==='dark'?'gelap':'terang'}`:''}`;
+  $('#game-mode').hidden=game.status==='none';
+  panel.dataset.mode=mode;panel.dataset.side=game.side||'light';
+  for(const list of section.querySelectorAll('[data-rules]'))list.hidden=list.dataset.rules!==mode;
   $('#game-status').textContent=status;
   $('#game-status').classList.toggle('yours',yourTurn);
   $('#game-new').textContent=game.status==='playing'?'Mulai ulang':'Main baru';
@@ -67,7 +79,10 @@
   if(game.status==='none')return;
   $('#game-opponent-name').textContent=`${game.opponent} · ${game.opponentCount} kartu`;
   $('#game-last').textContent=game.log.at(-1)?.text||'';
-  backs.replaceChildren(...Array.from({length:Math.min(game.opponentCount,14)},()=>el('span',null,'card back')));
+  // Bolak-balik: the back of your partner's cards is their other side, so you see it as at a real table.
+  const otherSide=game.side==='dark'?'light':'dark';
+  backs.replaceChildren(...(game.opponentBacks?game.opponentBacks.slice(0,14).map(card=>face(card,'span',otherSide)):Array.from({length:Math.min(game.opponentCount,14)},()=>el('span',null,'card back'))));
+  backs.classList.toggle('faces',!!game.opponentBacks);
   backs.setAttribute('aria-label',`${game.opponent} memegang ${game.opponentCount} kartu`);
   $('#game-draw-count').textContent=yourTurn&&game.penalty?`Ambil ${game.penalty} kartu`:`${game.drawCount} kartu`;
   drawPile.disabled=!yourTurn||!!game.drawn||selected.length>0;
@@ -76,7 +91,7 @@
   $('#game-penalty').hidden=!game.penalty;
   $('#game-penalty').textContent=`+${game.penalty}`;
   const topCard=face(game.top);top.replaceChildren(topCard);
-  $('#game-flavor').replaceChildren(symbol(game.flavor),el('span',`Rasa sekarang: ${FLAVOR[game.flavor].name}`));
+  $('#game-flavor').replaceChildren(symbol(game.flavor),el('span',`${game.side==='dark'?'Warna':'Rasa'} sekarang: ${FLAVOR[game.flavor].name}`));
   $('#game-flavor').className=`game-flavor ${game.flavor}`;
   renderHand(yourTurn);
   $('#game-pass').hidden=!(yourTurn&&game.drawn)||selected.length>0;
@@ -103,7 +118,7 @@
   hand.classList.toggle('waiting',!yourTurn);
   hand.setAttribute('aria-label',`Kartumu, ${cards.length} kartu`);
   const last=selected.length?byId(selected.at(-1)):null;
-  $('#game-you-name').textContent=selected.length?(WILD.includes(last.v)?`${selected.length} dipilih · ketuk kartu sejenis untuk menumpuk`:`${selected.length} dipilih · rasa berikutnya ${FLAVOR[last.f].name}`):`Kartumu · ${game.hand.length}`;
+  $('#game-you-name').textContent=selected.length?(isWild(last)?`${selected.length} dipilih · ketuk kartu sejenis untuk menumpuk`:`${selected.length} dipilih · rasa berikutnya ${FLAVOR[last.f].name}`):`Kartumu · ${game.hand.length}`;
   stackPlay.hidden=stackCancel.hidden=!selected.length;
   stackPlay.textContent=`Mainkan ${selected.length} kartu`;
   const remaining=game.hand.length-Math.max(selected.length,1);
@@ -180,7 +195,7 @@
  }
  function commit(ids,box){
   from=box;played=ids.length;selected=[];
-  if(WILD.includes(byId(ids[0]).v)){pendingWild=ids;pick.showModal();renderHand();return;}
+  if(isWild(byId(ids[0]))){pendingWild=ids;openPick();renderHand();return;}
   send('/play',{cards:ids,call:calling});
  }
 
@@ -194,7 +209,8 @@
    selected=card.id===selected[0]?[]:selected.includes(card.id)?selected.filter(id=>id!==card.id):[...selected,card.id];
    sound('tap');renderHand();return;
   }
-  if(game.hand.some(other=>other.id!==card.id&&other.v===card.v)){selected=[card.id];sound('tap');renderHand();return;}
+  // Only Kartu Snoomy lets twins be played together.
+  if(game.mode==='snoomy'&&game.hand.some(other=>other.id!==card.id&&other.v===card.v)){selected=[card.id];sound('tap');renderHand();return;}
   commit([card.id],button.getBoundingClientRect());
  });
  stackPlay.addEventListener('click',()=>{
@@ -203,6 +219,16 @@
  });
  stackCancel.addEventListener('click',()=>{selected=[];renderHand();});
  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&selected.length&&onPage()&&!document.querySelector('dialog[open]')){selected=[];renderHand();}});
+ // The colour choice follows the side in play: the dark side of Bolak-balik has its own four colours.
+ function openPick(){
+  const colours=game.side==='dark'?DARK:LIGHT;
+  pick.querySelector('.flavor-options').replaceChildren(...colours.map(name=>{
+   const button=el('button',null,name);button.type='button';button.dataset.flavor=name;
+   button.append(symbol(name),FLAVOR[name].name);return button;
+  }));
+  pick.querySelector('h2').textContent=game.side==='dark'?'Pilih warna baru':'Pilih rasa baru';
+  pick.showModal();
+ }
  pick.addEventListener('click',event=>{
   const choice=event.target.closest('[data-flavor]');
   if(event.target.closest('[data-pick-close]')){pick.close();pendingWild=null;from=null;return;}
@@ -217,14 +243,28 @@
  const syncSound=()=>{const on=!window.snoomySound?.muted;soundButton.setAttribute('aria-pressed',String(on));soundButton.setAttribute('aria-label',on?'Matikan efek suara':'Nyalakan efek suara');};
  soundButton.addEventListener('click',()=>{window.snoomySound?.setMuted(!window.snoomySound.muted);syncSound();sound('pop');});
  syncSound();
- const start=restart=>{
-  if(restart&&!confirm('Mulai ulang ronde ini? Kartu sekarang akan dikocok ulang.'))return;
-  selected=[];
-  send('/new',restart?{restart:true}:{});
+ // A new match asks which rule set to play; "Main lagi" keeps the current one.
+ const modePick=$('#game-mode-pick');
+ const chooseMode=restart=>{
+  restarting=restart;
+  for(const button of modePick.querySelectorAll('[data-mode]'))button.setAttribute('aria-current',String(button.dataset.mode===(game?.mode||'snoomy')));
+  modePick.querySelector('[data-mode-hint]').textContent=restart?'Ronde sekarang akan dikocok ulang.':'';
+  modePick.showModal();
  };
- $('#game-new').addEventListener('click',()=>start(game?.status==='playing'));
- $('#game-again').addEventListener('click',()=>start(false));
- $('#game-start').addEventListener('click',()=>start(false));
+ for(const [key,info] of Object.entries(MODE)){
+  const button=modePick.querySelector(`[data-mode="${key}"]`);
+  if(button)button.replaceChildren(el('strong',info.name),el('small',info.note));
+ }
+ modePick.addEventListener('click',event=>{
+  if(event.target.closest('[data-mode-close]')){modePick.close();return;}
+  const choice=event.target.closest('[data-mode]');
+  if(!choice)return;
+  modePick.close();selected=[];
+  send('/new',{mode:choice.dataset.mode,...(restarting?{restart:true}:{})});
+ });
+ $('#game-new').addEventListener('click',()=>chooseMode(game?.status==='playing'));
+ $('#game-again').addEventListener('click',()=>{selected=[];send('/new',{});});
+ $('#game-start').addEventListener('click',()=>chooseMode(false));
 
  document.addEventListener('snoomy-session',event=>{
   const next=event.detail?.user||null;
