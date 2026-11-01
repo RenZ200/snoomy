@@ -2,7 +2,8 @@ import { randomInt } from 'node:crypto';
 
 // Real: once a day, at a random moment between 09.00 and 21.00 WIB, both of you take one photo with the back and the
 // front camera. Your partner's photo of the day stays locked until you post yours, posts after two minutes are marked
-// late, and each of you can react to the other's photo.
+// late, and each of you can react to the other's photo. Phones that turned notifications on are told when it starts
+// and when the other one posts.
 export const PLAYERS = ['Moreno', 'Cahya'];
 export const WINDOW = 2 * 60 * 1000;
 export const REACTIONS = ['😍', '😂', '🥺', '😮', '🔥', '❤️'];
@@ -40,20 +41,51 @@ export function streak(days, today) {
   return count;
 }
 
-export function mountReal(app, db, { clock = Date.now, rand = randomInt } = {}) {
-  // The day's moment is chosen by whichever phone asks first; ON CONFLICT keeps one moment for both.
-  async function moment(day) {
+const quiet = { notify: async () => 0 };
+function core(db, { clock = Date.now, rand = randomInt, push = quiet }) {
+  // The day's hidden time is chosen by whichever request comes first; ON CONFLICT keeps one time for both.
+  async function due(day) {
     await db.prepare('INSERT INTO real_days(day,moment) VALUES(?,?) ON CONFLICT(day) DO NOTHING').get(day, pickMoment(day, rand));
     return Number((await db.prepare('SELECT moment FROM real_days WHERE day=?').get(day)).moment);
   }
+  // Real starts with the first check after the hidden time: an open phone or the scheduled tick. That check records
+  // the start and sends the reminder, so the two minutes count from the notification itself.
+  async function start(day, now) {
+    const started = await db.prepare('SELECT at FROM real_fired WHERE day=?').get(day);
+    if (started) return Number(started.at);
+    const hidden = await due(day);
+    if (now < hidden) return null;
+    // A day with Reals posted before notifications existed keeps counting from its hidden time, without a reminder.
+    const early = await db.prepare('SELECT id FROM real_posts WHERE day=?').get(day);
+    const won = await db.prepare('INSERT INTO real_fired(day,at) VALUES(?,?) ON CONFLICT(day) DO NOTHING RETURNING at').get(day, early ? hidden : now);
+    if (won && !early) await push.notify(PLAYERS, { title: '⚡ Waktunya Real!', body: 'Dua menit. Kamera belakang & depan, apa adanya.', tag: `real-${day}`, url: '/#real', ttl: 3600 });
+    return Number(won ? won.at : (await db.prepare('SELECT at FROM real_fired WHERE day=?').get(day)).at);
+  }
+  return { clock, push, start };
+}
+
+// The scheduled GitHub workflow calls this every five minutes in the day (and Vercel Cron once a day as a back-up), so
+// the reminder goes out while both phones have Snoomy closed. It is public on purpose: it can only start a Real that is
+// already due, and it reveals nothing.
+export function mountRealTick(app, db, options = {}) {
+  const { clock, start } = core(db, options);
+  app.get('/api/real/tick', async (req, res) => {
+    const now = clock();
+    await start(dayOf(now), now);
+    res.status(204).end();
+  });
+}
+
+export function mountReal(app, db, options = {}) {
+  const { clock, push, start } = core(db, options);
   const post = row => row ? { id: Number(row.id), user: row.user_name, day: row.day, posted: Number(row.posted), late: Number(row.late), caption: row.caption,
     reactions: JSON.parse(row.reactions || '{}'), full: !!row.kept } : null;
   const COLUMNS = 'id,day,user_name,posted,late,caption,reactions,main IS NOT NULL AS kept';
   async function today(user) {
-    const now = clock(), day = dayOf(now), at = await moment(day), started = now >= at;
+    const now = clock(), day = dayOf(now), at = await start(day, now);
     const rows = await db.prepare(`SELECT ${COLUMNS} FROM real_posts WHERE day=?`).all(day);
     const mine = rows.find(row => row.user_name === user), theirs = rows.find(row => row.user_name === other(user));
-    return { now, day, started, at: started ? at : null, mine: post(mine), theirs: post(theirs) };
+    return { now, day, started: at !== null, at, mine: post(mine), theirs: post(theirs) };
   }
 
   // Polled by every page so the alert shows wherever Snoomy is open. It never reveals a moment before it happens.
@@ -98,8 +130,8 @@ export function mountReal(app, db, { clock = Date.now, rand = randomInt } = {}) 
   });
 
   app.post('/api/real', async (req, res) => {
-    const now = clock(), day = dayOf(now), at = await moment(day);
-    if (now < at) fail('Belum waktunya Real hari ini. Tunggu sampai Snoomy memberi tahu.', 409);
+    const now = clock(), day = dayOf(now), at = await start(day, now);
+    if (at === null) fail('Belum waktunya Real hari ini. Tunggu sampai Snoomy memberi tahu.', 409);
     const body = req.body || {};
     const caption = typeof body.caption === 'string' ? body.caption.trim().slice(0, 120) : '';
     const main = image(body.main, LIMITS.main, 'Foto belakang'), inset = image(body.inset, LIMITS.inset, 'Foto depan'), thumb = image(body.thumb, LIMITS.thumb, 'Pratinjau');
@@ -114,6 +146,8 @@ export function mountReal(app, db, { clock = Date.now, rand = randomInt } = {}) 
     // Older full-size photos make room; their previews stay in the memories.
     await db.prepare('UPDATE real_posts SET main=NULL,inset=NULL WHERE day<? AND main IS NOT NULL').run(shiftDay(day, -KEEP_DAYS));
     const t = await today(req.user);
+    await push.notify([other(req.user)], { title: `${req.user} baru posting Real ✨`, body: t.theirs ? 'Lihat sekarang di Snoomy.' : 'Posting punyamu untuk melihatnya 🔒',
+      tag: `real-post-${day}-${req.user}`, url: '/#real', ttl: 6 * 3600 });
     res.status(201).json({ mine: t.mine, theirs: t.theirs });
   });
 

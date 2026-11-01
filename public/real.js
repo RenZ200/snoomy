@@ -347,15 +347,83 @@
  // The banner's button goes straight to the camera (the tap also lets the browser open it).
  $('#real-alert-go').addEventListener('click',()=>{alertBox.hidden=true;queueMicrotask(()=>load().then(openCamera));});
 
+ // Notifications: each phone turns them on once. The subscription follows whoever is signed in on that phone.
+ const notifyBox=$('#real-notify'),notifyToggle=$('#real-notify-toggle'),notifyTest=$('#real-notify-test'),notifyNote=$('#real-notify-note');
+ const iPhone=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ const installed=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+ const canPush=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+ // The service worker may never become ready in some browsers; do not wait for it forever.
+ const worker=()=>Promise.race([navigator.serviceWorker.ready,new Promise(resolve=>setTimeout(()=>resolve(null),4000))]);
+ const keyBytes=key=>Uint8Array.from(atob((key+'='.repeat((4-key.length%4)%4)).replace(/-/g,'+').replace(/_/g,'/')),char=>char.charCodeAt(0));
+ const sameKey=(subscription,key)=>{const a=new Uint8Array(subscription.options?.applicationServerKey||[]),b=keyBytes(key);return a.length===b.length&&a.every((value,i)=>value===b[i]);};
+ async function send(path,body){
+  const response=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok)throw Error(result.error||'Permintaan gagal.');
+  return result;
+ }
+ function showNotify(on,text,actionable=true){
+  notifyBox.hidden=false;notifyBox.classList.toggle('on',on);
+  notifyToggle.hidden=!actionable;notifyToggle.textContent=on?'🔕 Matikan notifikasi':'🔔 Nyalakan notifikasi';
+  notifyTest.hidden=!on;notifyNote.textContent=text;
+ }
+ async function syncPush(){
+  if(!user)return;
+  if(!canPush())return showNotify(false,iPhone&&!installed()?'Di iPhone, notifikasi butuh Snoomy terpasang: Bagikan → Tambah ke Layar Utama, lalu nyalakan dari aplikasinya.':'Browser ini belum bisa menerima notifikasi.',false);
+  if(Notification.permission==='denied')return showNotify(false,'Notifikasi Snoomy diblokir. Izinkan lewat pengaturan situs atau aplikasi, lalu buka lagi.',false);
+  const registration=await worker();
+  if(!registration)return showNotify(false,'Notifikasi belum bisa dipakai di browser ini.',false);
+  let subscription=await registration.pushManager.getSubscription();
+  if(subscription&&Notification.permission==='granted'){
+   try{
+    const {publicKey}=await (await fetch('/api/push',{cache:'no-store'})).json();
+    // A subscription made for another key cannot receive anything any more; it has to be turned on again.
+    if(!sameKey(subscription,publicKey)){await subscription.unsubscribe();subscription=null;}
+    else await send('/api/push/subscribe',{subscription:subscription.toJSON()});
+   }catch{}
+  }
+  if(subscription&&Notification.permission==='granted')showNotify(true,'Notifikasi Real nyala di HP ini: kamu dikabari saat waktunya tiba dan saat pasanganmu posting.');
+  else showNotify(false,'Biar tahu saat waktunya Real, walau Snoomy sedang tertutup.');
+ }
+ notifyToggle.addEventListener('click',async()=>{
+  notifyToggle.disabled=true;
+  try{
+   const registration=await worker();
+   if(!registration)throw Error('Notifikasi belum bisa dipakai di browser ini.');
+   let current=await registration.pushManager.getSubscription();
+   if(current&&notifyBox.classList.contains('on')){
+    await send('/api/push/unsubscribe',{endpoint:current.endpoint}).catch(()=>{});
+    await current.unsubscribe();
+    showNotify(false,'Notifikasi dimatikan di HP ini.');
+    return;
+   }
+   if(await Notification.requestPermission()!=='granted')throw Error('Izin notifikasi belum diberikan.');
+   const {publicKey}=await (await fetch('/api/push',{cache:'no-store'})).json();
+   if(current&&!sameKey(current,publicKey)){await current.unsubscribe();current=null;}
+   const subscription=current||await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:keyBytes(publicKey)});
+   await send('/api/push/subscribe',{subscription:subscription.toJSON()});
+   showNotify(true,'Notifikasi Real nyala di HP ini ✨ Tekan "Coba kirim" untuk mengetes.');
+  }catch(error){notify(error.message);await syncPush();}
+  finally{notifyToggle.disabled=false;}
+ });
+ notifyTest.addEventListener('click',async()=>{
+  notifyTest.disabled=true;
+  try{await send('/api/push/test',{});notify('Notifikasi tes terkirim. Cek bilah notifikasi HP ♡');}
+  catch(error){notify(error.message);}
+  finally{notifyTest.disabled=false;}
+ });
+ // A tapped notification brings an open Snoomy window straight to Real.
+ navigator.serviceWorker?.addEventListener('message',event=>{if(event.data?.type==='snoomy-open'&&event.data.hash)location.hash=event.data.hash;});
+
  document.addEventListener('snoomy-session',event=>{
   const next=event.detail?.user||null;
   if(next===user)return;
   stop();user=next;
-  if(user){(onPage()?load():poll());schedule();}
+  if(user){(onPage()?load():poll());schedule();syncPush();}
  });
  document.addEventListener('snoomy-route',()=>{
   if(!user)return;
-  if(onPage()){alertBox.hidden=true;navLink?.classList.remove('has-turn');load();}
+  if(onPage()){alertBox.hidden=true;navLink?.classList.remove('has-turn');load();syncPush();}
   else if(camera.open)camera.close();
   schedule();
  });

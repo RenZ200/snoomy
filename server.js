@@ -5,7 +5,8 @@ import { mountBudget } from './budget.js';
 import { mountGame } from './game.js';
 import { mountParty } from './party.js';
 import { mountBoardGames } from './boardgames.js';
-import { mountReal } from './real.js';
+import { mountReal, mountRealTick } from './real.js';
+import { createPush } from './push.js';
 import { createAuth } from './auth.js';
 import { openDatabase } from './database.js';
 import { dirname, resolve } from 'node:path';
@@ -35,6 +36,9 @@ app.use((req,res,next) => {
 });
 const cookie = req => (req.headers.cookie || '').split('; ').find(c => c.startsWith('duo='))?.slice(4);
 const mountGoogleAuthenticated=mountGoogle(app,db,{cookie});
+const push=createPush(db);
+// The scheduled reminder check needs no login; it can only start a Real that is already due.
+mountRealTick(app,db,{push});
 app.post('/api/login', async (req,res) => {
  const {user,pin=''} = req.body || {};
  if(!users.includes(user)) return res.status(400).json({error:'Pilih profil yang valid.'});
@@ -96,7 +100,8 @@ mountGallery(app,db);
 mountGame(app,db);
 mountBoardGames(app,db);
 mountParty(app,db);
-mountReal(app,db);
+push.mount(app);
+mountReal(app,db,{push});
 app.use(express.static(resolve(root,'public')));
 app.use('/api',(req,res)=>res.status(404).json({error:'Endpoint tidak ditemukan.'}));
 app.use((err,req,res,next)=>{if(!err.status)console.error('Permintaan server gagal:',err.code || 'internal');res.status(err.status||500).json({error:err.status?err.message:'Server sedang bermasalah.'});});

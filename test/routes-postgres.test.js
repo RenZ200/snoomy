@@ -6,7 +6,9 @@ import { postgresAdapter } from '../database.js';
 import { mountParty } from '../party.js';
 import { mountGame } from '../game.js';
 import { mountBoardGames } from '../boardgames.js';
-import { mountReal } from '../real.js';
+import { mountReal, mountRealTick } from '../real.js';
+import { createPush } from '../push.js';
+import webpush from 'web-push';
 
 // Production runs on PostgreSQL (Neon), where the adapter adds RETURNING id to inserts.
 // These checks drive the real route handlers against PGlite so SQLite-only assumptions show up here.
@@ -31,8 +33,12 @@ test('Nonton bareng, playlist, games and Real routes work on PostgreSQL', async 
     mountParty(app, db);
     mountGame(app, db);
     mountBoardGames(app, db);
-    let clock = Date.parse('2026-11-01T09:00:00Z'); // 16.00 WIB; with rand 0 the moment was 09.00 WIB
-    mountReal(app, db, { clock: () => clock, rand: () => 0 });
+    let clock = Date.parse('2026-11-01T09:00:00Z'); // 16.00 WIB; with rand 0 the hidden time was 09.00 WIB
+    const delivered = [];
+    const push = createPush(db, { send: async (subscription, body) => { delivered.push([subscription.endpoint, JSON.parse(body).title]); } });
+    push.mount(app);
+    mountRealTick(app, db, { clock: () => clock, rand: () => 0, push });
+    mountReal(app, db, { clock: () => clock, rand: () => 0, push });
 
     let watch = await call('GET /api/watch', 'Moreno');
     assert.equal(watch.status, 200, watch.body?.error);
@@ -95,15 +101,27 @@ test('Nonton bareng, playlist, games and Real routes work on PostgreSQL', async 
     assert.equal(summary.body.games.four.status, 'playing');
     assert.equal(typeof summary.body.games.four.yourTurn, 'boolean');
 
+    // Push: stored keys, ON CONFLICT ... DO UPDATE with excluded, and the IN (...) lookup.
+    const key = (await call('GET /api/push', 'Moreno')).body.publicKey;
+    assert.equal(key, (await push.vapid()).publicKey);
+    const subscription = { endpoint: 'https://push.example/pg', keys: { p256dh: webpush.generateVAPIDKeys().publicKey, auth: 'c2VjcmV0c2VjcmV0MTIz' } };
+    assert.equal((await call('POST /api/push/subscribe', 'Moreno', { subscription })).status, 201);
+    assert.equal((await call('POST /api/push/subscribe', 'Cahya', { subscription })).status, 201, 'the same phone moves to Cahya');
+    assert.equal((await call('GET /api/push', 'Moreno')).body.devices, 0);
+    assert.equal((await call('GET /api/push', 'Cahya')).body.devices, 1);
+
     // Real: BIGINT moments, ON CONFLICT, the kept flag and the both-posted streak query.
+    assert.equal((await call('GET /api/real/tick', 'nobody')).status, 204, 'the tick starts the due Real and tells the phones');
+    assert.deepEqual(delivered, [['https://push.example/pg', '⚡ Waktunya Real!']]);
     const jpeg = size => `data:image/jpeg;base64,${Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(size, 9)]).toString('base64')}`;
     const shot = { main: jpeg(2000), inset: jpeg(600), thumb: jpeg(200) };
     let real = await call('GET /api/real/status', 'Moreno');
     assert.equal(real.status, 200, real.body?.error);
-    assert.deepEqual([real.body.started, real.body.at], [true, Date.parse('2026-11-01T02:00:00Z')]);
+    assert.deepEqual([real.body.started, real.body.at], [true, clock], 'it started when the tick came, not at the hidden time');
     const posted = await call('POST /api/real', 'Moreno', shot);
     assert.equal(posted.status, 201, posted.body?.error);
-    assert.deepEqual([posted.body.mine.late, posted.body.mine.full], [7 * 3600000, true]);
+    assert.deepEqual([posted.body.mine.late, posted.body.mine.full], [0, true]);
+    assert.deepEqual(delivered.at(-1), ['https://push.example/pg', 'Moreno baru posting Real ✨']);
     const photo = { id: String(posted.body.mine.id), kind: 'main' };
     assert.equal((await call('GET /api/real/:id/:kind', 'Cahya', {}, photo)).status, 403);
     assert.equal((await call('POST /api/real', 'Moreno', shot)).status, 409);

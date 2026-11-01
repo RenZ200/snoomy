@@ -1,0 +1,19 @@
+name: Real reminder
+
+# Every five minutes during the day this wakes Snoomy, so the daily Real notification goes out even while both
+# phones have Snoomy closed. The endpoint only starts a Real whose hidden time has passed, at most once a day.
+on:
+  schedule:
+    - cron: '*/5 2-13 * * *'      # 09.00–20.55 WIB
+    - cron: '0,15,30,45 14 * * *'  # catch-up until 21.45 WIB
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Start today's Real if it is due
+        run: curl --fail --silent --show-error --max-time 30 --retry 2 https://snoomy.vercel.app/api/real/tick
