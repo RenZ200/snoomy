@@ -10,7 +10,9 @@
  const head=el('div',null,'chat-head');
  const title=el('div');const heading=el('h2','Chat kita');const presence=el('small','','chat-presence');title.append(heading,presence);
  const close=el('button','×','icon chat-close');close.type='button';close.setAttribute('aria-label','Tutup chat');
- head.append(title,close);
+ // Colek: rings the partner's phone on demand, even when there is nothing new to say.
+ const nudge=el('button','👋 Colek','secondary chat-nudge');nudge.type='button';nudge.setAttribute('aria-label','Colek pasangan lewat notifikasi');
+ head.append(title,nudge,close);
  const list=el('ol',null,'chat-list');list.setAttribute('aria-live','polite');list.setAttribute('aria-label','Pesan');
  const older=el('button','Muat pesan sebelumnya','secondary chat-older');older.type='button';older.hidden=true;
  const scroller=el('div',null,'chat-scroll');scroller.append(older,list);
@@ -108,6 +110,11 @@
  }
  toggle.addEventListener('click',()=>openChat(panel.hidden));
  close.addEventListener('click',()=>{openChat(false);toggle.focus();});
+ nudge.addEventListener('click',async()=>{
+  nudge.disabled=true;
+  try{await api('/nudge',{});sound('pop');notify(`${partner||'Pasangan'} sudah dicolek ♡`);setTimeout(()=>{nudge.disabled=false;},20000);}
+  catch(error){notify(error.message);nudge.disabled=false;}
+ });
  panel.addEventListener('keydown',event=>{if(event.key==='Escape'){openChat(false);toggle.focus();}});
  older.addEventListener('click',async()=>{
   older.disabled=true;

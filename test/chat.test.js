@@ -30,7 +30,7 @@ test('chat: messages, unread count, read receipts, history pages and notificatio
     const first = await call('Moreno', '', { text: '  udah makan?\r\nkangen ♡ ' });
     assert.equal(first.status, 201);
     assert.deepEqual([first.body.message.from, first.body.message.text], ['Moreno', 'udah makan?\nkangen ♡']);
-    assert.deepEqual(sent.map(m => [m.users, m.title, m.body, m.tag, m.url]), [[['Cahya'], '💬 Moreno', 'udah makan?\nkangen ♡', 'chat-Moreno', '/#chat']]);
+    assert.deepEqual(sent.map(m => [m.users, m.title, m.body, m.tag, m.url]), [[['Cahya'], '💬 Moreno', 'udah makan?\nkangen ♡', 'chat-1', '/#chat']]);
 
     chat = (await call('Cahya')).body;
     assert.equal(chat.unread, 1);
@@ -68,6 +68,19 @@ test('chat: messages, unread count, read receipts, history pages and notificatio
     const page = (await call('Moreno', `?before=${chat.messages[0].id}`)).body;
     assert.equal(page.messages.length, 14);
     assert.equal(page.messages[0].text, 'udah makan?\nkangen ♡');
+
+    // Every message gets its own tag, so the phone keeps all of them instead of only the last one.
+    const tags = sent.filter(m => m.tag.startsWith('chat-')).map(m => m.tag);
+    assert.equal(new Set(tags).size, tags.length);
+
+    // Colek: one nudge notification to the partner, then a short cooldown.
+    const nudge = await call('Cahya', '/nudge', {});
+    assert.equal(nudge.status, 200);
+    assert.deepEqual([sent.at(-1).users, sent.at(-1).title, sent.at(-1).url], [['Moreno'], '👋 Cahya nyolek kamu', '/#chat']);
+    assert.equal((await call('Cahya', '/nudge', {})).status, 429);
+    now += 21000;
+    assert.equal((await call('Cahya', '/nudge', {})).status, 200);
+    assert.notEqual(sent.at(-1).tag, sent.at(-2).tag);
   } finally {
     server.close();
     db.close();

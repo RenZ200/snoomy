@@ -147,5 +147,10 @@ test('Nonton bareng, playlist, games and Real routes work on PostgreSQL', async 
     assert.equal(chat.body.unread, 1);
     chat = await call('POST /api/chat/read', 'Cahya', { upTo: message.body.message.id });
     assert.equal(chat.body.unread, 0);
+    // Colek: the nudge cooldown upsert, delivered to Moreno's phone (the test phone moved to Cahya earlier).
+    const nudge = await call('POST /api/chat/nudge', 'Moreno');
+    assert.equal(nudge.status, 200, nudge.body?.error);
+    assert.deepEqual(delivered.at(-1), ['https://push.example/pg', '👋 Moreno nyolek kamu']);
+    assert.equal((await call('POST /api/chat/nudge', 'Moreno')).status, 429);
   } finally { await db.close(); }
 });

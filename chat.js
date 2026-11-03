@@ -1,8 +1,9 @@
 // Chat: one conversation between Moreno and Cahya. Messages are text; each side sees when the other has read them.
-// A new message is sent to the partner's phones as a notification, unless the partner has the chat open right now.
+// Every new message is its own notification on the partner's phones (they stack, none is replaced), unless the
+// partner has the chat open right now. "Colek" sends a nudge notification on demand, at most once per NUDGE_MS.
 export const PLAYERS = ['Moreno', 'Cahya'];
 export const MAX_LENGTH = 1000;
-const PAGE = 50, OPEN_MS = 10000;
+const PAGE = 50, OPEN_MS = 10000, NUDGE_MS = 20000;
 const fail = (message, status = 400) => { const e = Error(message); e.status = status; throw e; };
 const other = user => PLAYERS.find(p => p !== user);
 const quiet = { notify: async () => 0 };
@@ -47,9 +48,20 @@ export function mountChat(app, db, { clock = Date.now, push = quiet } = {}) {
     await mark(req.user, 'read_upto', message.id);
     const partner = await reader(other(req.user));
     if (now - partner.seen >= OPEN_MS) {
-      await push.notify([other(req.user)], { title: `💬 ${req.user}`, body: text.length > 140 ? `${text.slice(0, 137)}…` : text, tag: `chat-${req.user}`, url: '/#chat', ttl: 24 * 3600 });
+      await push.notify([other(req.user)], { title: `💬 ${req.user}`, body: text.length > 140 ? `${text.slice(0, 137)}…` : text, tag: `chat-${message.id}`, url: '/#chat', ttl: 24 * 3600 });
     }
     res.status(201).json({ message, ...await state(req.user, []) });
+  });
+
+  app.post('/api/chat/nudge', async (req, res) => {
+    const now = clock(), partner = other(req.user);
+    const last = await db.prepare('SELECT at FROM chat_nudges WHERE user_name=?').get(req.user);
+    const wait = Math.ceil((NUDGE_MS - (now - Number(last?.at || 0))) / 1000);
+    if (wait > 0) fail(`Tunggu ${wait} detik sebelum colek lagi.`, 429);
+    await db.prepare('INSERT INTO chat_nudges(user_name,at) VALUES(?,?) ON CONFLICT(user_name) DO UPDATE SET at=excluded.at RETURNING at').get(req.user, now);
+    const delivered = await push.notify([partner], { title: `👋 ${req.user} nyolek kamu`, body: 'Buka Snoomy yuk, ada yang kangen ♡', tag: `nudge-${now}`, url: '/#chat', ttl: 3600 });
+    if (!delivered) fail(`${partner} belum menyalakan notifikasi di HP-nya.`, 409);
+    res.json({ delivered });
   });
 
   app.post('/api/chat/read', async (req, res) => {
