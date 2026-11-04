@@ -83,7 +83,7 @@ test('Nonton bareng, playlist, games and Real routes work on PostgreSQL', async 
 
     let summary = await call('GET /api/games', 'Cahya');
     assert.equal(summary.status, 200, summary.body?.error);
-    assert.deepEqual(Object.keys(summary.body.games), ['cards', 'ludo', 'four', 'snakes']);
+    assert.deepEqual(Object.keys(summary.body.games), ['cards', 'ludo', 'four', 'snakes', 'sketch', 'quiz', 'talk']);
     assert.equal(summary.body.games.ludo.status, 'none');
     assert.equal(summary.body.games.cards.status, 'playing');
     assert.equal((await call('GET /api/games/:name', 'Cahya', {}, { name: 'chess' })).status, 404);
@@ -99,7 +99,27 @@ test('Nonton bareng, playlist, games and Real routes work on PostgreSQL', async 
       assert.equal(moved.body.version, started.body.version + 1);
       assert.equal((await call('POST /api/games/:name/new', turn, {}, { name })).status, 409, 'a running round is not replaced by accident');
     }
+    // The three newer games: rows exist on PostgreSQL, turn may be a list or empty, and strokes can cross a guess.
+    const drawing = await call('POST /api/games/:name/new', 'Moreno', {}, { name: 'sketch' });
+    assert.equal(drawing.status, 200, drawing.body?.error);
+    const drawer = drawing.body.drawer, guesser = drawer === 'Moreno' ? 'Cahya' : 'Moreno';
+    assert.equal((await call('POST /api/games/:name/move', drawer, { action: 'pick', index: 0 }, { name: 'sketch' })).status, 200);
+    assert.equal((await call('POST /api/games/:name/move', drawer, { action: 'ink', from: 0, add: [{ c: 0, s: 1, p: [1, 2, 3, 4] }] }, { name: 'sketch' })).status, 200);
+    assert.equal((await call('GET /api/games/:name', guesser, {}, { name: 'sketch' })).body.word, null);
+    assert.equal((await call('GET /api/games/:name', guesser, {}, { name: 'sketch' })).body.strokes.length, 1);
+    const asked = await call('POST /api/games/:name/new', 'Cahya', {}, { name: 'quiz' });
+    assert.equal(asked.status, 200, asked.body?.error);
+    assert.equal(asked.body.question.kind, 'know');
+    assert.equal((await call('POST /api/games/:name/move', 'Moreno', { action: 'answer', text: 'bakso' }, { name: 'quiz' })).status, 200);
+    const cards = await call('POST /api/games/:name/new', 'Moreno', {}, { name: 'talk' });
+    assert.equal(cards.status, 200, cards.body?.error);
+    assert.equal((await call('POST /api/games/:name/move', 'Cahya', { action: 'next', deck: 'kita', version: cards.body.version }, { name: 'talk' })).body.card.deck, 'kita');
     summary = await call('GET /api/games', 'Moreno');
+    assert.equal(summary.body.games.quiz.yourTurn, false, 'Moreno already answered');
+    assert.equal(summary.body.games.quiz.turn, 'Cahya');
+    assert.equal((await call('GET /api/games', 'Cahya')).body.games.quiz.yourTurn, true);
+    assert.equal(summary.body.games.talk.turn, null);
+    assert.equal(summary.body.games.talk.yourTurn, false);
     assert.equal(summary.body.games.four.status, 'playing');
     assert.equal(typeof summary.body.games.four.yourTurn, 'boolean');
 

@@ -1,7 +1,7 @@
 // Snoomy app shell: network first so edits show up at once, cached copy only when offline.
 // API calls, uploads and other origins always go straight to the network.
-const CACHE='snoomy-shell-v14';
-const SHELL=['/','/style.css','/polish.css','/poster.css','/google-calendar.css','/music.css','/gallery.css','/cards.css','/boards.css','/real.css','/chat.css','/surprise.css','/media.css','/app.js','/navigation.js','/motion.js','/google-calendar.js','/gallery.js','/sfx.js','/games.js','/cards.js','/ludo.js','/four.js','/snakes.js','/real.js','/chat.js','/surprise.js','/yt.js','/watch.js','/music.js','/pwa.js','/qol.js','/vendor/gsap.min.js','/mascot.svg','/icons/icon-192.png'];
+const CACHE='snoomy-shell-v15';
+const SHELL=['/','/style.css','/polish.css','/poster.css','/google-calendar.css','/music.css','/gallery.css','/cards.css','/boards.css','/real.css','/chat.css','/surprise.css','/media.css','/app.js','/navigation.js','/motion.js','/google-calendar.js','/gallery.js','/sfx.js','/games.js','/cards.js','/ludo.js','/four.js','/snakes.js','/sketch.js','/quiz.js','/talk.js','/real.js','/chat.js','/surprise.js','/yt.js','/watch.js','/music.js','/pwa.js','/qol.js','/vendor/gsap.min.js','/mascot.svg','/icons/icon-192.png'];
 self.addEventListener('install',event=>{
  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
 });

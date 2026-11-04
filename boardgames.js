@@ -2,17 +2,22 @@ import { randomInt } from 'node:crypto';
 import * as ludo from './games/ludo.js';
 import * as four from './games/four.js';
 import * as snakes from './games/snakes.js';
+import * as sketch from './games/sketch.js';
+import * as quiz from './games/quiz.js';
+import * as talk from './games/talk.js';
 
-// Ludo, Empat Sejajar and Ular Tangga. Like Kartu Snoomy there is one shared match per game, stored as JSON in
+// Every game except the cards. Like Kartu Snoomy there is one shared match per game, stored as JSON in
 // board_games with an optimistic version: a double tap or a move from the other phone gets 409 and the client reloads.
-export const BOARD_GAMES = { ludo, four, snakes };
+export const BOARD_GAMES = { ludo, four, snakes, sketch, quiz, talk };
 const fail = (message, status = 400) => { const e = Error(message); e.status = status; throw e; };
 // Enough to show every game's status in the picker and to remind whose turn it is.
+// In Seberapa Kenal Aku both can be up at once, so turn may be a list; Kartu Ngobrol has no turns at all.
 const brief = (row, user) => {
   const state = row?.state ? JSON.parse(row.state) : null, version = Number(row?.version || 0);
-  return state
-    ? { status: state.status, round: state.round, turn: state.turn, winner: state.winner, wins: state.wins, version, yourTurn: state.status === 'playing' && state.turn === user }
-    : { status: 'none', version };
+  if (!state) return { status: 'none', version };
+  const pending = [].concat(state.turn ?? []);
+  return { status: state.status, round: state.round, turn: pending.find(name => name !== user) ?? pending[0] ?? null, winner: state.winner, wins: state.wins, version,
+    yourTurn: state.status === 'playing' && pending.includes(user) };
 };
 
 export function mountBoardGames(app, db) {

@@ -1,0 +1,21 @@
+// Tebak Gambar: words that are fun to draw badly. Everyday things, food, animals, actions and a few of our own.
+export const WORDS = [
+  'kucing', 'anjing', 'kelinci', 'hamster', 'bebek', 'ayam', 'sapi', 'kambing', 'gajah', 'jerapah', 'zebra', 'singa', 'harimau', 'monyet', 'panda',
+  'koala', 'pinguin', 'lumba lumba', 'hiu', 'paus', 'kepiting', 'gurita', 'ubur ubur', 'kura kura', 'buaya', 'ular', 'cicak', 'katak', 'kupu kupu',
+  'lebah', 'semut', 'nyamuk', 'laba laba', 'siput', 'burung hantu', 'merak', 'flamingo', 'dinosaurus', 'unicorn', 'naga',
+  'nasi goreng', 'mie ayam', 'bakso', 'sate', 'martabak', 'pisang goreng', 'cilok', 'seblak', 'telur ceplok', 'rendang', 'pizza', 'burger', 'sushi',
+  'donat', 'es krim', 'boba', 'kopi susu', 'matcha', 'kue ulang tahun', 'semangka', 'pisang', 'stroberi', 'nanas', 'durian', 'alpukat', 'indomie',
+  'kerupuk', 'gorengan', 'popcorn', 'cokelat',
+  'kacamata', 'jam tangan', 'payung', 'sepatu', 'sandal jepit', 'topi', 'helm', 'ransel', 'dompet', 'kunci', 'gembok', 'lilin', 'gunting', 'sikat gigi',
+  'kipas angin', 'kulkas', 'kompor', 'televisi', 'remote', 'kasur', 'bantal', 'guling', 'selimut', 'lemari', 'cermin', 'tangga', 'jendela', 'pintu',
+  'lampu', 'gitar', 'piano', 'drum', 'mikrofon', 'earphone', 'kamera', 'laptop', 'charger', 'powerbank', 'hp retak', 'buku', 'pensil', 'penghapus',
+  'mahkota', 'cincin', 'kado', 'balon', 'surat cinta', 'bunga mawar', 'hoodie', 'kaos kaki', 'dasi', 'kalung',
+  'motor', 'mobil', 'sepeda', 'bus', 'kereta', 'pesawat', 'kapal', 'perahu', 'helikopter', 'roket', 'ambulans', 'truk', 'becak', 'ojol', 'skateboard',
+  'pantai', 'gunung', 'air terjun', 'pulau', 'hutan', 'gurun', 'pelangi', 'matahari', 'bulan', 'bintang', 'hujan', 'petir', 'awan', 'salju', 'gunung meletus',
+  'rumah', 'masjid', 'gereja', 'sekolah', 'rumah sakit', 'bioskop', 'kebun binatang', 'taman bermain', 'bianglala', 'kolam renang', 'menara', 'jembatan', 'monas',
+  'orang tidur', 'orang nangis', 'orang ngambek', 'orang joget', 'orang lari', 'orang renang', 'orang masak', 'orang nyetir', 'orang selfie', 'orang mancing',
+  'orang kentut', 'orang bersin', 'orang kaget', 'orang nugas', 'orang pelukan', 'orang gandengan', 'orang ciuman', 'orang lamaran', 'orang pacaran', 'orang kesurupan',
+  'hantu', 'pocong', 'kuntilanak', 'alien', 'robot', 'zombie', 'bajak laut', 'superhero', 'putri kerajaan', 'badut', 'dokter', 'polisi', 'guru', 'pemadam kebakaran',
+  'jantung', 'otak', 'gigi', 'hidung', 'kumis', 'jenggot', 'rambut kribo', 'mata melotot', 'lidah melet', 'telinga gajah',
+  'snoomy', 'first date', 'toko kacamata', 'satu earphone berdua', 'video call', 'rindu', 'mantan', 'ngambek', 'bucin', 'gabut',
+];

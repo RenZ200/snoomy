@@ -1,10 +1,10 @@
 # Permainan
 
-The **Permainan** page (`#game`) holds four two-player games. Moreno and Cahya each play from their own phone; every game keeps one shared match in the database.
+The **Permainan** page (`#game`) holds seven two-player games. Moreno and Cahya each play from their own phone; every game keeps one shared match in the database.
 
 ## Game picker
 
-- The cards at the top switch between **Kartu Snoomy**, **Ludo**, **Empat Sejajar** and **Ular Tangga** (arrow keys work too). Each card shows that game's state: not started, whose turn, or the last winner and score. The choice is remembered per device.
+- The cards at the top switch between **Kartu Snoomy**, **Ludo**, **Empat Sejajar**, **Ular Tangga**, **Tebak Gambar**, **Seberapa Kenal Aku** and **Kartu Ngobrol** (arrow keys work too). Each card shows that game's state: not started, whose turn, or the last winner and score. The choice is remembered per device.
 - One reminder covers every game: the red dot on the Permainan tab, "✦ Giliranmu" in the tab title and the Beranda shortcut ("Giliranmu di Ludo ✦"). A game that is not on screen plays the turn sound and vibrates once when it becomes your turn.
 - Only the open game polls quickly (1.5 s while waiting for the other player, 5 s on your own turn). The picker checks every game through `/api/games` every 6 s on this page and every 15 s elsewhere, and not at all while the app is in the background.
 
@@ -62,3 +62,30 @@ Snakes and ladders from 1 to 100. Ladders: 3→22, 8→30, 28→55, 36→44, 51�
 - Movement is animated with GSAP when it is available and motion is allowed: dice rolls, tokens hopping square by square, captures, ladders and snakes, falling discs. Without it (or with reduced motion) the board simply shows the new position.
 - Sound effects are synthesised with Web Audio in `public/sfx.js` (no audio files): card play, draw, dice, your turn, incoming +2/+4, win and lose. The speaker button on the card table mutes them per device.
 - Tests: `test/game.test.js` (Kartu Snoomy), `test/modes.test.js` (Klasik, Bolak-balik, Tanpa Ampun, plus full random matches per mode), `test/boardgames.test.js` (Ludo, Empat Sejajar, Ular Tangga rules) and `test/routes-postgres.test.js` (all game routes on PostgreSQL, including stale versions).
+
+## Tebak Gambar
+
+`games/sketch.js`, words in `games/sketch-words.js`.
+
+- The drawer picks one of three words and draws on a 1000×750 canvas. Strokes go up about once a second while drawing, and the guesser's phone polls every 1.5 s.
+- `ink` moves carry `from` and replace every stroke after that index, so a stroke in progress, undo, clear and a resend all use the same rule. They and guesses are sent without a version so they can cross each other.
+- The word is only in `view` for the drawer, or for both once the round ends. The guesser gets a letter hint. A one-letter typo counts on words of five letters or more.
+- A right guess scores for the guesser. Roles swap each round. A finished drawing can be saved to Galeri.
+
+## Seberapa Kenal Aku
+
+`games/quiz.js`, questions in `games/quiz-questions.js`.
+
+- Eight questions a match: four open, two pick-one, two "siapa". In the open text `{nama}` and `{aku}` are filled in per reader, so one sentence reads right for both people.
+- Answers stay on the server until both are in. The person an open question is about judges it. Pick-one and "siapa" questions score themselves, and agreeing on a "siapa" gives both a point.
+- `turn` is a list here because both can be up at once. `view` and `/api/games` reduce it to one name for each reader.
+- Each pile is used up before it reshuffles. Personal questions (`ask`) go first in the next match, stay hidden from the other person, and a restart gives back any that were not reached.
+
+## Kartu Ngobrol
+
+`games/talk.js`, cards in `games/talk-cards.js`.
+
+- One shared table with no turns and no winner. Either person opens the next card and it flips on both phones.
+- Four decks (Santai, Dalem, Kita, Tantangan) plus Semua. Every card comes up once before the pile reshuffles.
+- Disimpan keeps favourite cards across reshuffles.
+- To add content, add a line to the data file. A test checks there are no duplicates.

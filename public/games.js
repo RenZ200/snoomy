@@ -1,11 +1,11 @@
-// Permainan: the game picker, turn reminders for every game, and the shared client behind Ludo, Empat Sejajar and
-// Ular Tangga (polling while a game is open, sending moves with the version they were based on, the common panel parts).
+// Permainan: the game picker, turn reminders for every game, and the shared client behind every game except the cards
+// (polling while a game is open, sending moves with the version they were based on, the common panel parts).
 window.SnoomyGames = (() => {
  const $=s=>document.querySelector(s);
  const section=$('#game');
  if(!section)return null;
  const KEY='snoomy-game',PLAYERS=['Moreno','Cahya'];
- const GAMES={cards:'Kartu Snoomy',ludo:'Ludo',four:'Empat Sejajar',snakes:'Ular Tangga'};
+ const GAMES={cards:'Kartu Snoomy',ludo:'Ludo',four:'Empat Sejajar',snakes:'Ular Tangga',sketch:'Tebak Gambar',quiz:'Seberapa Kenal Aku',talk:'Kartu Ngobrol'};
  const tabs=[...section.querySelectorAll('.game-picker [role=tab]')];
  const navLink=document.querySelector('header nav a[href="#game"]'),quick=$('#ql-game'),title=document.title;
  const controllers={};
@@ -36,7 +36,7 @@ window.SnoomyGames = (() => {
  }
 
  const score=brief=>brief.wins?`${brief.wins[user]??0}–${brief.wins[rival(user)]??0}`:'';
- const label=brief=>brief.status==='none'?'Belum mulai':brief.status==='finished'?`${brief.winner?(brief.winner===user?'Kamu menang':`${brief.winner} menang`):'Seri'} · ${score(brief)}`:brief.yourTurn?'Giliranmu ✦':`Giliran ${brief.turn}`;
+ const label=brief=>brief.status==='none'?'Belum mulai':brief.status==='finished'?`${brief.winner?(brief.winner===user?'Kamu menang':`${brief.winner} menang`):'Seri'} · ${score(brief)}`:brief.yourTurn?'Giliranmu ✦':brief.turn?`Giliran ${brief.turn}`:'Kartu kebuka';
  // The picker, the red dot on the menu, the tab title and the Beranda shortcut all follow every game at once.
  function paint(){
   for(const tab of tabs){
@@ -48,7 +48,7 @@ window.SnoomyGames = (() => {
   navLink?.classList.toggle('has-turn',mine.length>0&&!onPage());
   document.title=mine.length?`✦ Giliranmu · ${title}`:title;
   if(quick){
-   const waiting=Object.keys(GAMES).find(id=>briefs[id]?.status==='playing');
+   const waiting=Object.keys(GAMES).find(id=>briefs[id]?.status==='playing'&&briefs[id].turn);
    quick.textContent=mine.length?`Giliranmu di ${GAMES[mine[0]]} ✦`:waiting?`${GAMES[waiting]}: menunggu ${briefs[waiting].turn}…`:'Kartu, ludo & lainnya';
    quick.classList.toggle('attention',mine.length>0);
   }
@@ -89,7 +89,8 @@ window.SnoomyGames = (() => {
  const refresh=()=>{for(const controller of Object.values(controllers))controller.refresh();};
 
  // The board games share one way of talking to the server and the common parts of their panels.
- function board(id,{render,prompt,restartText='Mulai ulang ronde ini? Papannya akan dikosongkan.'}){
+ // note: a status line of the game's own. fast: keep polling quickly even on your own turn. result: the end-of-round text.
+ function board(id,{render,prompt,note,fast,result:ending,restartText='Mulai ulang ronde ini? Papannya akan dikosongkan.'}){
   const panel=$(`#play-${id}`),part=name=>panel.querySelector(`[data-${name}]`);
   let game=null,busy=false,poller=null;
   async function api(path='',body){
@@ -104,7 +105,7 @@ window.SnoomyGames = (() => {
    const yourTurn=next.status==='playing'&&next.turn===next.you;
    part('score').replaceChildren(el('span',`${next.you} ${next.wins[next.you]}`,'you'),el('span','–'),el('span',`${next.wins[next.opponent]} ${next.opponent}`));
    const status=part('status');
-   status.textContent=next.status==='none'?'Belum ada ronde. Mulai satu ♡':next.status==='finished'?(next.winner?`${next.winner===next.you?'Kamu':next.winner} menang ronde ${next.round} ♡`:`Ronde ${next.round} seri`):yourTurn?prompt(next):`Menunggu ${next.turn}…`;
+   status.textContent=next.status==='none'?'Belum ada ronde. Mulai satu ♡':note?.(next)??(next.status==='finished'?(next.winner?`${next.winner===next.you?'Kamu':next.winner} menang ronde ${next.round} ♡`:`Ronde ${next.round} seri`):yourTurn?prompt(next):`Menunggu ${next.turn}…`);
    status.classList.toggle('yours',yourTurn);
    part('new').textContent=next.status==='playing'?'Mulai ulang':'Main baru';
    part('empty').hidden=next.status!=='none';
@@ -113,7 +114,7 @@ window.SnoomyGames = (() => {
    part('log').replaceChildren(...next.log.slice(-4).reverse().map(entry=>el('li',entry.text)));
    const result=part('result');
    result.hidden=next.status!=='finished';
-   if(next.status==='finished')result.querySelector('p').textContent=next.winner?(next.winner===next.you?'Kamu menang! ♡':`${next.winner} menang kali ini ♡`):'Seri! Satu ronde lagi?';
+   if(next.status==='finished')result.querySelector('p').textContent=ending?.(next)??(next.winner?(next.winner===next.you?'Kamu menang! ♡':`${next.winner} menang kali ini ♡`):'Seri! Satu ronde lagi?');
    const open=isOpen(id);
    render(next,before,{yourTurn,open,animate:open&&moving()&&!!before&&before.status!=='none'&&before.round===next.round});
    if(!open||!before||before.status==='none')return;
@@ -128,7 +129,7 @@ window.SnoomyGames = (() => {
   function schedule(){
    clearTimeout(poller);
    if(!user||!isOpen(id))return;
-   poller=setTimeout(async()=>{await load();schedule();},game?.status==='playing'&&game.turn!==game.you?1500:5000);
+   poller=setTimeout(async()=>{await load();schedule();},game?.status==='playing'&&(fast?.(game)||game.turn!==game.you)?1500:5000);
   }
   async function send(path,body={}){
    if(busy||!game)return null;
@@ -136,6 +137,11 @@ window.SnoomyGames = (() => {
    try{const next=await api(path,{...body,version:game.version});busy=false;show(next);return next;}
    catch(error){busy=false;notify(error.message);if(error.status===409)await load();return null;}
    finally{busy=false;panel.removeAttribute('aria-busy');schedule();}
+  }
+  // For moves that may cross the other phone's on purpose: no version, so only a true write collision gets 409.
+  async function push(body,tries=1){
+   try{const next=await api('/move',body);if(!busy)show(next);return next;}
+   catch(error){if(error.status===409&&tries>1)return push(body,tries-1);throw error;}
   }
   const start=restart=>{
    if(restart&&!confirm(restartText))return;
@@ -148,7 +154,7 @@ window.SnoomyGames = (() => {
    refresh(){if(isOpen(id))load();schedule();},
    reset(){clearTimeout(poller);game=null;},
   };
-  return {move:body=>send('/move',body),get game(){return game;},get busy(){return busy;},panel};
+  return {move:body=>send('/move',body),push,get game(){return game;},get busy(){return busy;},panel};
  }
 
  // A die with pips; rolling shuffles faces while it spins, then lands on the value.
@@ -196,5 +202,5 @@ window.SnoomyGames = (() => {
  document.addEventListener('snoomy-game',refresh);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden){poll();refresh();}schedule();});
  select(active);
- return {board,dice,spread,report,moving,sound,buzz,active:()=>active,isOpen};
+ return {board,dice,spread,report,moving,sound,buzz,notify,active:()=>active,isOpen};
 })();
