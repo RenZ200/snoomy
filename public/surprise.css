@@ -1,0 +1,58 @@
+/* Full-screen birthday surprise. Night plum background so the photos and the pink glow carry the feeling. */
+body.surprise-on{overflow:hidden}
+.surprise-launch{grid-column:1/-1;min-height:56px;font-family:var(--heading);font-size:17px}
+.surprise{position:fixed;inset:0;z-index:100;background:radial-gradient(70% 50% at 50% 0%,color-mix(in srgb,var(--pink) 28%,transparent),transparent 70%),var(--plum);color:var(--cream);overflow:hidden;font-family:var(--body)}
+.surprise-stage{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden}
+.surprise button{box-shadow:none}
+.surprise-close,.surprise-sound{position:absolute;z-index:6;top:max(16px,env(safe-area-inset-top));right:14px;width:40px;height:40px;min-height:40px;padding:0;border-radius:50%;background:rgba(36,23,38,.45);color:var(--cream);font-size:20px;backdrop-filter:blur(8px)}
+.surprise-sound{right:62px;font-size:16px}
+.surprise-sound.muted{opacity:.5;text-decoration:line-through}
+.surprise-sky{position:absolute;inset:0;pointer-events:none}
+.surprise-sky span{position:absolute;color:var(--cream);opacity:.15;animation:surprise-twinkle 4s ease-in-out infinite}
+@keyframes surprise-twinkle{50%{opacity:.75;transform:scale(1.3)}}
+
+.surprise-gift,.surprise-wish{position:relative;display:grid;justify-items:center;gap:14px;max-width:min(460px,calc(100vw - 48px));text-align:center;animation:surprise-rise 1.1s var(--ease-out) both}
+.surprise-gift h1,.surprise-wish h1{margin:0;font-size:clamp(34px,9vw,56px);line-height:1.08;color:#fff}
+.surprise-gift p{margin:0;font-size:17px;line-height:1.65;color:color-mix(in srgb,var(--cream) 85%,transparent)}
+.surprise-box{font-size:76px!important;line-height:1;animation:surprise-bob 2.6s ease-in-out infinite}
+.surprise-open-gift{margin-top:12px;padding:14px 36px;font-size:17px}
+.surprise-gift input{max-width:100%;color:var(--cream)}
+@keyframes surprise-rise{from{opacity:0;transform:translateY(22px)}}
+@keyframes surprise-bob{50%{transform:translateY(-10px) rotate(-3deg)}}
+
+.surprise-backdrop{position:absolute;inset:-40px;background:center/cover no-repeat;filter:blur(30px) brightness(.45) saturate(1.2)}
+.surprise-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;animation:surprise-zoom 8.5s linear both}
+@keyframes surprise-zoom{from{opacity:0;transform:scale(1)}8%{opacity:1}to{transform:scale(1.05)}}
+.surprise-bars{position:absolute;z-index:5;top:max(8px,calc(env(safe-area-inset-top) - 4px));left:12px;right:12px;display:flex;gap:3px}
+.surprise-bars span{flex:1;height:3px;border-radius:3px;background:rgba(255,255,255,.3);overflow:hidden}
+.surprise-bars span.done{background:#fff}
+.surprise-bars span.active:after{content:'';display:block;height:100%;background:#fff;transform-origin:left;animation:surprise-fill var(--story) linear both}
+@keyframes surprise-fill{from{transform:scaleX(0)}}
+.surprise-words{position:absolute;z-index:4;left:0;right:0;bottom:0;padding:90px 24px max(30px,env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(36,23,38,.86) 62%);animation:surprise-rise .9s var(--ease-out) .25s both;pointer-events:none}
+.surprise-words>*{max-width:560px;margin-inline:auto}
+.surprise-words small{display:block;font-weight:800;font-size:13px;color:color-mix(in srgb,var(--pink) 60%,#fff)}
+.surprise-words h2{margin:4px auto 6px;font-size:clamp(26px,6.4vw,36px);color:#fff}
+.surprise-words p{margin-bottom:0;font-size:16px;line-height:1.55}
+.surprise-tap{position:absolute;z-index:3;top:0;bottom:0;width:32%;min-height:0;padding:0;border-radius:0;background:none!important;transform:none!important}
+.surprise-tap.back{left:0}.surprise-tap.next{right:0;width:68%}.surprise-tap.all{inset:0;width:100%}
+
+.surprise-statement{position:relative;max-width:min(620px,calc(100vw - 48px));margin:0;text-align:center;font-size:clamp(34px,8vw,58px);line-height:1.15;color:#fff;animation:surprise-rise 1.6s var(--ease-out) both}
+.surprise-poem{position:relative;width:100%;max-height:100%;overflow:auto;padding:max(70px,calc(env(safe-area-inset-top) + 50px)) 28px 60px;text-align:center;font:500 19px/1.8 var(--heading)}
+.surprise-poem p{margin:0 auto;max-width:520px;animation:surprise-line 1.1s var(--ease-out) var(--line) both}
+.surprise-next{margin-top:26px;animation:surprise-line 1s var(--ease-out) var(--line) both}
+@keyframes surprise-line{from{opacity:0;transform:translateY(10px)}}
+
+.surprise-cake{position:relative;display:block;width:150px;height:150px;min-height:0;padding:0;background:none!important;transform:none!important}
+.surprise-cake .cake{position:absolute;left:0;right:0;bottom:0;font-size:104px;line-height:1;text-align:center}
+.surprise-cake .candle{position:absolute;left:calc(50% - 3px);top:18px;width:6px;height:28px;border-radius:2px;background:var(--cream)}
+.surprise-cake .flame{position:absolute;left:calc(50% - 7px);top:-2px;width:14px;height:22px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:radial-gradient(circle at 50% 70%,#fff3b0,#ffb347 55%,var(--red));box-shadow:0 0 24px 8px rgba(255,179,71,.65);animation:surprise-flicker .5s ease-in-out infinite alternate}
+.surprise-cake.out .flame{opacity:0;transition:opacity .4s}
+@keyframes surprise-flicker{to{transform:scale(.9,1.1) rotate(3deg)}}
+.surprise-hint{margin:0;font-size:15px;line-height:1.6}
+.surprise-signature{margin:0;font-weight:800;color:color-mix(in srgb,var(--pink) 60%,#fff)}
+.surprise-actions{display:flex;gap:10px}
+.surprise-actions .secondary{color:var(--plum)}
+.surprise-heart{position:absolute;top:-30px;z-index:2;color:var(--pink);pointer-events:none;animation:surprise-fall 4.2s linear both}
+@keyframes surprise-fall{from{transform:translateY(0) rotate(0)}to{transform:translateY(calc(100vh + 60px)) rotate(240deg);opacity:.2}}
+@media(prefers-reduced-motion:reduce){.surprise-photo,.surprise-poem p,.surprise-next{opacity:1}}
+@media(max-width:600px){.surprise-poem{font-size:16px;line-height:1.7;padding-inline:20px}}
