@@ -92,11 +92,33 @@
   show(stage,sparkles(),Object.assign(el('div',null,'surprise-gift'),{}),);
   const box=stage.querySelector('.surprise-gift');
   box.append(el('p','🎁','surprise-box'),el('h1',text.greeting),el('p',text.intro),open);
-  open.addEventListener('click',()=>{
-   music=musicBox();music?.start();root.querySelector('.surprise-sound').hidden=!music;
-   index=0;story(stage);
-  });
+  open.addEventListener('click',()=>{if(data.text.song&&window.SnoomyYouTube)song(stage);else begin(stage,musicBox());});
   open.focus();
+ }
+
+ function begin(stage,player){
+  music=player;music?.start();root.querySelector('.surprise-sound').hidden=!music;
+  index=0;story(stage);
+ }
+ // The song plays in a small YouTube player. Android starts it from the tap on Buka; iPhone needs a tap on the
+ // player itself. Once it plays the story begins and the player shrinks to a corner. Errors fall back to the music box.
+ function song(stage){
+  const YT=window.SnoomyYouTube,{videoId,title}=data.text.song;
+  const box=el('div',null,'surprise-song'),frame=YT.embed(videoId,{autoplay:true,title});
+  box.append(frame);root.append(box);
+  const skip=button('Lanjut tanpa lagu','secondary');
+  const prompt=el('div',null,'surprise-gift surprise-song-prompt');
+  prompt.append(el('h1','Putar lagunya dulu ya ♡'),el('p',title),el('p','Kalau belum jalan, tekan ▶ di video.','surprise-hint'),skip);
+  show(stage,sparkles(),prompt);
+  let started=false;
+  const drop=()=>{player.destroy();box.remove();};
+  const go=()=>{
+   if(started)return;started=true;box.classList.add('mini');
+   document.dispatchEvent(new CustomEvent('snoomy-media',{detail:{source:'surprise'}}));
+   begin(stage,{start(){player.command('seekTo',[0,true]);player.command('playVideo');},birthday(){},muted:false,toggle(){this.muted=!this.muted;player.command(this.muted?'mute':'unMute');return this.muted;},close:drop});
+  };
+  const player=YT.connect(frame,{onState:state=>{if(state===1)go();},onError:()=>{if(started)return;started=true;drop();begin(stage,musicBox());}});
+  skip.addEventListener('click',()=>{if(started)return;started=true;drop();begin(stage,musicBox());});
  }
 
  function story(stage){
