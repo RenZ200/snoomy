@@ -2,6 +2,19 @@
 // All words and photos come from /api/surprise, which stays closed until the date. Moreno previews it at #kejutan.
 (() => {
  const STORY_MS=8000,SEEN='snoomy-surprise-seen';
+ // The cake is drawn here in Snoomy's outline style, with the mascot sitting on top beside the candle.
+ const CAKE=`<svg viewBox="0 0 240 216" aria-hidden="true"><g stroke="#241726" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+<ellipse cx="120" cy="200" rx="112" ry="13" fill="#fffcf5"/>
+<rect x="28" y="122" width="184" height="76" rx="14" fill="#E75CA6"/>
+<path d="M28 138c0-9 6-16 15-16h154c9 0 15 7 15 16 0 7-5 12-11 12s-11-5-11-11c0 8-6 19-13 19s-13-9-13-19c0 6-5 11-11 11s-11-5-11-11c0 11-6 24-13 24s-13-13-13-24c0 6-5 11-11 11s-11-5-11-11c0 8-6 17-13 17s-13-8-13-17c0 6-5 11-11 11s-16-6-16-17z" fill="#F6F1E4"/>
+<rect x="60" y="62" width="120" height="62" rx="12" fill="#93AE6B"/>
+<path d="M60 76c0-8 6-14 13-14h94c7 0 13 6 13 14 0 6-4 10-9 10s-10-4-10-10c0 8-5 17-11 17s-11-8-11-17c0 5-4 10-9 10s-9-5-9-10c0 9-5 20-11 20s-11-10-11-20c0 5-4 10-9 10s-9-4-9-10c0 5-4 10-9 10s-9-5-9-10z" fill="#fffcf5"/>
+<rect class="candle" x="84" y="20" width="13" height="44" rx="3" fill="#F6F1E4"/>
+<path d="M84 34l13-7M84 47l13-7" fill="none" stroke="#E75CA6"/>
+</g>
+<path class="flame" d="M90.5 -6c7 8 10 13 10 18a10 10 0 0 1-20 0c0-5 3-10 10-18z" fill="#ffb347" stroke="#D6483C" stroke-width="2"/>
+<g class="sprinkles" fill="#fffcf5"><circle cx="58" cy="176" r="4"/><circle cx="100" cy="184" r="4"/><circle cx="146" cy="176" r="4"/><circle cx="186" cy="182" r="4"/></g>
+<path fill="#fffcf5" d="M120 192c-16-10-9-20 0-13 9-7 16 3 0 13z" transform="translate(0 -12)"/></svg><img src="/mascot.svg" alt="" class="snoomy"><span class="smoke"></span>`;
  const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
  const el=(tag,text,className)=>{const node=document.createElement(tag);if(text!=null)node.textContent=text;if(className)node.className=className;return node;};
  const button=(text,className='')=>{const node=el('button',text,className);node.type='button';return node;};
@@ -129,7 +142,7 @@
 
  function wish(stage){
   const cake=el('button',null,'surprise-cake');cake.type='button';cake.setAttribute('aria-label','Tiup lilin');
-  cake.append(el('span',null,'flame'),el('span',null,'candle'),el('span','🎂','cake'));
+  cake.innerHTML=CAKE;
   const hint=el('p','Tutup mata, buat permintaan, lalu ketuk lilinnya','surprise-hint');
   const title=el('h1',data.text.wish),signed=el('p',data.text.signature,'surprise-signature'),again=button('Lihat lagi','secondary'),done=button('Tutup ♡');
   const actions=el('div',null,'surprise-actions');actions.append(again,done);actions.hidden=true;
@@ -186,7 +199,8 @@
   links.prepend(launch);
  }
  async function check(){
-  if(!user)return;
+  // Never rebuild the page while it is open, or a tab switch would restart the story.
+  if(!user||root)return;
   try{
    data=await api();chip();
    if(location.hash==='#kejutan'&&data.author)return setup();

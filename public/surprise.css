@@ -42,12 +42,17 @@ body.surprise-on{overflow:hidden}
 .surprise-next{margin-top:26px;animation:surprise-line 1s var(--ease-out) var(--line) both}
 @keyframes surprise-line{from{opacity:0;transform:translateY(10px)}}
 
-.surprise-cake{position:relative;display:block;width:150px;height:150px;min-height:0;padding:0;background:none!important;transform:none!important}
-.surprise-cake .cake{position:absolute;left:0;right:0;bottom:0;font-size:104px;line-height:1;text-align:center}
-.surprise-cake .candle{position:absolute;left:calc(50% - 3px);top:18px;width:6px;height:28px;border-radius:2px;background:var(--cream)}
-.surprise-cake .flame{position:absolute;left:calc(50% - 7px);top:-2px;width:14px;height:22px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:radial-gradient(circle at 50% 70%,#fff3b0,#ffb347 55%,var(--red));box-shadow:0 0 24px 8px rgba(255,179,71,.65);animation:surprise-flicker .5s ease-in-out infinite alternate}
-.surprise-cake.out .flame{opacity:0;transition:opacity .4s}
-@keyframes surprise-flicker{to{transform:scale(.9,1.1) rotate(3deg)}}
+.surprise-cake{position:relative;display:block;width:250px;height:236px;min-height:0;padding:0;border-radius:0;background:none!important;transform:none!important}
+.surprise-cake svg{position:absolute;left:0;right:0;bottom:0;width:100%;overflow:visible;filter:drop-shadow(0 14px 22px rgba(231,92,166,.35))}
+.surprise-cake .snoomy{position:absolute;right:42px;top:0;width:92px;height:auto;transform:rotate(6deg);transform-origin:50% 100%}
+.surprise-cake .flame{transform-box:fill-box;transform-origin:50% 100%;filter:drop-shadow(0 0 10px #ffb347);animation:surprise-flicker .5s ease-in-out infinite alternate}
+.surprise-cake .smoke{position:absolute;left:78px;top:16px;width:12px;height:12px;border-radius:50%;background:rgba(246,241,228,.75);opacity:0}
+.surprise-cake.out .flame{opacity:0;transition:opacity .3s}
+.surprise-cake.out .smoke{animation:surprise-smoke 1.8s ease-out both}
+.surprise-cake.out .snoomy{animation:surprise-hop .7s var(--spring) 2}
+@keyframes surprise-flicker{to{transform:scale(.88,1.1) rotate(4deg)}}
+@keyframes surprise-smoke{0%{opacity:.8}100%{opacity:0;transform:translate(10px,-46px) scale(3)}}
+@keyframes surprise-hop{50%{transform:translateY(-22px) rotate(-6deg)}}
 .surprise-hint{margin:0;font-size:15px;line-height:1.6}
 .surprise-signature{margin:0;font-weight:800;color:color-mix(in srgb,var(--pink) 60%,#fff)}
 .surprise-actions{display:flex;gap:10px}
