@@ -55,7 +55,9 @@
  }
 
  function close(){
-  clearTimeout(timer);music?.close();music=null;root?.remove();root=null;document.body.classList.remove('surprise-on');remember();
+  clearTimeout(timer);music?.close();music=null;root?.remove();root=null;document.body.classList.remove('surprise-on');
+  // Moreno's previews must not stop it opening for Cahya on the same device.
+  if(!data?.author)remember();
   if(location.hash==='#kejutan')location.hash='#dashboard';
  }
  function frame(){
