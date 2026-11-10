@@ -1,0 +1,79 @@
+/* Revamp layer (2026-11-10). Loads last: calmer navigation, a six-tile home, a profile menu and small conveniences.
+   The palette and type still come from style.css; glass, shadows and springs from poster.css. */
+
+/* Every pressable thing gives under the finger. */
+button:not(:disabled):active,.button:active,.quick-links a:active,header nav a:active,.game-pick:active{transform:scale(.96)}
+:focus-visible{outline:3px solid color-mix(in srgb,var(--pink) 75%,var(--plum));outline-offset:3px}
+
+/* Profile: the name opens a menu instead of signing out at once. */
+.profile{gap:6px}
+.profile:after{content:'';width:7px;height:7px;margin:-3px 2px 0 4px;border:solid currentColor;border-width:0 2px 2px 0;transform:rotate(45deg);opacity:.6}
+#profile-menu{width:min(380px,calc(100vw - 28px))}
+.menu-list{display:grid;gap:8px;margin-top:6px}
+.menu-list button{display:flex;justify-content:flex-start;align-items:center;gap:14px;width:100%;min-height:60px;padding:10px 16px;border-radius:20px;border:1px solid var(--glass-edge);background:var(--glass);color:var(--plum);text-align:left;box-shadow:none}
+.menu-list button[hidden]{display:none}
+.menu-list button>span:first-child{display:grid;place-items:center;flex:none;width:38px;height:38px;border-radius:50%;background:var(--pill-matcha);font-size:18px}
+.menu-list button[data-menu=switch]>span:first-child{background:var(--pill-pink);font:600 18px var(--heading)}
+.menu-list strong{display:block;font:600 16px var(--heading)}
+.menu-list small{display:block;font-size:12.5px;font-weight:700;color:var(--muted)}
+.menu-list button[data-menu=sound][aria-pressed=false]>span:first-child{filter:grayscale(1);opacity:.6}
+
+/* Home: six tiles, with Chat and Real next to the planners. */
+.quick-links{grid-template-columns:repeat(3,1fr)}
+.quick-links a:nth-child(5) svg{background:var(--pill-pink)!important}
+.quick-links a:nth-child(6) svg{background:linear-gradient(135deg,var(--vanila,#f1db97),var(--pink))!important}
+
+/* Tasks can be ticked and added right on Beranda. */
+.mini-task{display:flex;align-items:flex-start;gap:12px}
+.mini-task input[type=checkbox]{flex:none;width:24px;height:24px;margin:2px 0 0;accent-color:var(--matcha)}
+.quick-task{display:flex;gap:8px;margin:14px 0 4px}
+.quick-task input{flex:1;min-width:0;min-height:46px;margin:0;padding:10px 16px;border-radius:999px;font-size:15px}
+.quick-task button{flex:none;width:46px;min-height:46px;padding:0;border-radius:50%;font:600 24px/1 var(--heading)}
+.quick-task.busy{opacity:.6;pointer-events:none}
+
+/* Until Google is set up, its card stays out of the way. */
+.google-panel:has(#google-connect:disabled){padding-block:18px}
+.google-panel:has(#google-connect:disabled) h2{font-size:20px;margin-bottom:4px}
+.google-panel:has(#google-connect:disabled) h2+p,.google-panel:has(#google-connect:disabled) details,.google-panel:has(#google-connect:disabled) .google-actions{display:none}
+.google-panel:has(#google-connect:disabled) #google-state{margin:0;font-size:13px;font-weight:700;color:var(--muted)}
+
+/* Toast with one action. */
+#toast{display:flex;align-items:center;gap:12px}
+#toast[hidden]{display:none}
+.toast-action{min-height:32px;padding:4px 14px;border-radius:999px;border:0;background:var(--pink);color:var(--plum);font:800 13px var(--body);box-shadow:none}
+
+/* Deadline shortcuts in the task form. */
+.date-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.date-chips button{min-height:34px;padding:4px 14px;border-radius:999px;border:1px solid var(--glass-edge);background:var(--glass);color:var(--plum);font:800 12.5px var(--body);box-shadow:none}
+.date-chips button[aria-pressed=true]{background:var(--pill-matcha);border-color:transparent}
+
+/* The Real reminder takes its own row instead of covering the page. */
+body:has(#real-alert:not([hidden])) main{padding-top:78px}
+
+@media(max-width:600px){
+ /* Tab bar: icons only, the current page spelled out. */
+ header nav{display:flex;gap:0;padding:6px}
+ header nav a{flex:1 1 0;flex-direction:row;gap:6px;min-height:50px;padding:6px 0;font-size:12.5px;font-weight:800;letter-spacing:0}
+ header nav a>span{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+ header nav a[aria-current=page]{flex:0 0 auto;padding-inline:14px}
+ header nav a[aria-current=page]>span{position:static;width:auto;height:auto;overflow:visible;clip-path:none}
+ header nav .nav-icon{width:23px;height:23px}
+ header nav .nav-pill{border-radius:999px}
+ header nav{border-radius:999px}
+ body>header nav a.has-turn:after{top:8px;right:calc(50% - 16px)}
+ :root{--tabbar:64px}
+
+ /* Header: avatar only, with chat beside it. */
+ .profile{width:42px;height:42px;min-height:42px;padding:0;justify-content:center;font-size:0;border-radius:50%}
+ .profile:after{display:none}
+ body[data-user] .profile:before{width:34px;height:34px;margin:0;font-size:15px}
+ .snoomy-chat,body[data-view=game] .snoomy-chat,body[data-view=watch] .snoomy-chat{top:calc((var(--header-height,62px) - 42px)/2);bottom:auto;right:calc(max(16px,env(safe-area-inset-right)) + 50px)}
+ .chat-toggle{width:42px;height:42px;min-height:42px;border-width:1.5px;box-shadow:none}
+ .chat-badge{top:-4px;right:-4px}
+ body:has(dialog[open]) .snoomy-chat:not(.open){visibility:hidden}
+
+ .quick-links{grid-template-columns:1fr 1fr}
+ body:has(#real-alert:not([hidden])) main{padding-top:74px}
+ .menu-list button{min-height:56px}
+}
+@media(prefers-reduced-motion:reduce){button:active,.button:active,.quick-links a:active,header nav a:active,.game-pick:active{transform:none}}

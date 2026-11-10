@@ -3,8 +3,11 @@
  const main=document.querySelector('main'),nav=document.querySelector('header nav');
  let frame;
  const home=['dashboard','overview','quick-links','google-calendar'];
+ // Each tab remembers how far you had scrolled.
+ const scrolled=window.snoomyScroll={};
  function route(event){
   const hash=location.hash.slice(1)||'dashboard';
+  if(document.body.dataset.view)scrolled[document.body.dataset.view]=window.scrollY;
   // Real lives at the top of Galeri, so #real opens Galeri.
   const page=hash==='real'?'gallery':['calendar','todos','budgeting','gallery','game','watch'].includes(hash)?hash:'dashboard';
   document.body.dataset.view=page;
@@ -25,7 +28,7 @@
    if(link.hash==='#'+page)link.setAttribute('aria-current','page');
    else link.removeAttribute('aria-current');
   });
-  window.scrollTo({top:0,behavior:'instant'});
+  window.scrollTo({top:['real','google-calendar'].includes(hash)?0:scrolled[page]||0,behavior:'instant'});
   if(hash==='google-calendar')document.querySelector('#google-calendar').scrollIntoView({block:'start',behavior:'instant'});
   if(hash==='real')document.querySelector('#real')?.scrollIntoView({block:'start',behavior:'instant'});
   if(event){main.tabIndex=-1;main.focus({preventScroll:true});}

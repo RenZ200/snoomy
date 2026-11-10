@@ -19,7 +19,12 @@ function freeTogether(classes,now){
  return slots;
 }
 function due(task){const d=distance(task.deadline);return d<0?`Lewat ${-d} hari`:d===0?'Hari ini':d===1?'Besok':dateLabel(task.deadline);}
-function toast(message){$('#toast').textContent=message;$('#toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').hidden=true,4000);}
+// A toast can carry one action (for example "Urungkan"); it then stays a little longer.
+function toast(message,action){
+ const box=$('#toast');box.textContent=message;
+ if(action){const button=document.createElement('button');button.type='button';button.className='toast-action';button.textContent=action.label;button.onclick=()=>{box.hidden=true;action.run();};box.append(button);}
+ box.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>box.hidden=true,action?7000:4000);
+}
 function showLogin(){document.dispatchEvent(new CustomEvent('snoomy-session',{detail:{user:null}}));if($('#edit-dialog').open)$('#edit-dialog').close();if(!$('#login-dialog').open)$('#login-dialog').showModal();}
 async function api(path,method='GET',body){
  const response=await fetch('/api'+path,{method,headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
@@ -35,7 +40,7 @@ function render(){
  const now=wibNow();
  document.body.dataset.user=state.user;
  $('#greeting').innerHTML=`<span class="greet">${greeting(now)},</span> ${escape(state.user)}!`;
- $('#profile').textContent=`${state.user} · Ganti`;
+ $('#profile').textContent=state.user;$('#profile').setAttribute('aria-label',`Profil ${state.user}, buka menu`);
  $('#today').textContent=new Intl.DateTimeFormat('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Jakarta'}).format(new Date());
  const today=state.schedules.filter(s=>s.day===dayIndex());
  live={now:new Set(today.filter(s=>minutes(s.start)<=now&&now<minutes(s.end)).map(s=>s.id)),next:today.filter(s=>minutes(s.start)>now).sort((a,b)=>a.start.localeCompare(b.start))[0]?.id??null};
@@ -46,7 +51,7 @@ function render(){
  $('#free-together').textContent=!today.length?'Kalian sama-sama bebas hari ini ♡':free.length?`Kosong bareng: ${free.slice(0,2).map(([a,b])=>`${clock(a)}–${clock(b)}`).join(' · ')}`:'Sisa hari ini cukup padat. Semangat ♡';
  $('#today-classes').innerHTML=today.length?today.map(s=>`<div class="mini ${live.now.has(s.id)?'is-now':''}"><span class="dot ${s.owner==='Cahya'?'cahya':''}"></span><span class="time">${s.start}<br>${s.end}</span><div><strong>${escape(s.course)}</strong><p>${s.owner}${s.room?' · '+escape(s.room):''}</p>${liveBadge(s)}</div></div>`).join(''):'<p class="empty">Tidak ada kelas hari ini. Waktunya tarik napas ♡</p>';
  const soon=state.tasks.filter(t=>!t.done&&distance(t.deadline)<=3);
- $('#soon-tasks').innerHTML=soon.length?soon.slice(0,4).map(t=>`<div class="mini"><span aria-hidden="true">${distance(t.deadline)<=1?'✦':'♡'}</span><div><strong>${escape(t.title)}</strong><p>${t.assignee} · ${due(t)}</p></div></div>`).join(''):'<p class="empty">Belum ada deadline dalam 3 hari ke depan. Lega!</p>';
+ $('#soon-tasks').innerHTML=soon.length?soon.slice(0,4).map(t=>`<div class="mini mini-task"><input type="checkbox" aria-label="Tandai ${escape(t.title)} selesai" data-action="check-task" data-id="${t.id}"><div><strong>${escape(t.title)}</strong><p>${t.assignee} · ${due(t)}</p></div></div>`).join(''):'<p class="empty">Belum ada deadline dalam 3 hari ke depan. Lega!</p>';
  $('#week').innerHTML=days.map((d,i)=>{const items=state.schedules.filter(s=>s.day===i+1);return `<section class="day ${dayIndex()===i+1?'current':''}"><h3>${d}</h3>${items.length?items.map(classCard).join(''):'<p class="empty">Ruang kosong ♡</p>'}</section>`;}).join('');
  const tasks=state.tasks.filter(t=>filter==='all'||(filter==='done'?t.done:!t.done));
  const group=t=>t.done?'Selesai':distance(t.deadline)<0?'Terlambat':distance(t.deadline)<=1?'Hari ini & besok':distance(t.deadline)<=7?'Minggu ini':'Nanti';
@@ -80,7 +85,7 @@ document.addEventListener('click',async e=>{
  if(action.startsWith('edit'))return openEditor(type,Number(id));
  if(action.startsWith('delete')&&!confirm(`Hapus ${type==='schedule'?'jadwal':'tugas'} ini?`))return;
  button.disabled=true;
- try{if(action==='check-task')await api('/tasks/'+id,'PUT',{done:button.checked});else await api(`/${type==='schedule'?'schedules':'tasks'}/${id}`,'DELETE',{});await refresh();}catch(error){if(action==='check-task')button.checked=!button.checked;toast(error.message);}finally{button.disabled=false;}
+ try{if(action==='check-task'){const done=button.checked;await api('/tasks/'+id,'PUT',{done});if(done)toast('Tugas selesai ♡',{label:'Urungkan',run:async()=>{try{await api('/tasks/'+id,'PUT',{done:false});await refresh();}catch(error){toast(error.message);}}});}else await api(`/${type==='schedule'?'schedules':'tasks'}/${id}`,'DELETE',{});await refresh();}catch(error){if(action==='check-task')button.checked=!button.checked;toast(error.message);}finally{button.disabled=false;}
 });
 refresh();setInterval(()=>{if(!document.hidden&&state.user&&!$('#edit-dialog').open)refresh();},10000);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.user&&!$('#edit-dialog').open)refresh();});
 

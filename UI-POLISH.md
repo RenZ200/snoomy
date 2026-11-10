@@ -38,3 +38,13 @@ Snoomy is a Progressive Web App for Android and iPhone: `public/manifest.webmani
 - **Feedback:** shimmering placeholders while data loads, an offline notice, and in Kartu Snoomy a last-move bubble, your card count, "✦ Giliranmu" in the tab title, a short vibration on your turn (after the first tap, where supported) and confetti when you win.
 
 New file `public/qol.js` holds the login, dialog and offline helpers; styles live at the end of `public/poster.css` and `public/cards.css`.
+
+## Revamp and conveniences (2026-11-10)
+
+`public/revamp.css` and `public/revamp.js` load last and layer on the poster theme.
+
+- **Phone navigation:** the tab bar shows icons only and spells out the current page in its pill, so seven tabs breathe. The header keeps the brand, a chat button and the profile avatar; the chat button no longer floats over the page.
+- **Profile menu:** tapping the profile opens a menu (Notifikasi, Efek suara, Pasang di HP when available, Ganti profil) instead of signing out at once.
+- **Beranda:** six tiles, adding Chat (unread count) and Real hari ini (its state for today). Tasks due soon can be ticked there, and "Tambah tugas cepat" adds a task for today, for both of you, from a title alone. The Google Calendar card shrinks to two lines until Google is set up.
+- **Tasks:** ticking a task shows "Urungkan" in the toast; the task form has deadline shortcuts (Hari ini, Besok, Lusa, Minggu depan).
+- **Moving around:** each tab remembers its scroll position (`navigation.js`); tapping the current tab returns to the top. The Real reminder takes its own row instead of covering the page. Buttons give a little under the finger.
