@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Snoomy × SIAP</title>
+<style>
+  :root{--cream:#FFF8E6;--paper:#FFFDF6;--ink:#2B1E2A;--plum:#6B3A5D;--matcha:#93AE6B;--pink:#E75CA6;--line:#E6DCC8;--muted:#7A6B75}
+  body{margin:0;width:320px;font:13px/1.45 system-ui,"Segoe UI",sans-serif;background:var(--cream);color:var(--ink)}
+  header{display:flex;gap:10px;align-items:center;padding:14px 16px;background:var(--plum);color:var(--cream)}
+  header img{width:28px;height:28px;border-radius:8px}
+  header strong{font-size:15px}
+  main{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+  label{display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:12px}
+  input,select{font:inherit;font-weight:400;padding:7px 9px;border:1px solid var(--line);border-radius:9px;background:var(--paper);color:var(--ink)}
+  .row{display:flex;gap:8px}
+  button{font:inherit;font-weight:700;border:0;border-radius:999px;padding:8px 14px;cursor:pointer;background:var(--pink);color:#fff}
+  button.secondary{background:transparent;border:1.5px solid var(--plum);color:var(--plum)}
+  button:disabled{opacity:.6;cursor:default}
+  .status{padding:10px 12px;border-radius:12px;background:var(--paper);border:1px dashed var(--line)}
+  .status.ok{border-color:var(--matcha)}
+  .status.err{border-color:var(--pink)}
+  .note{color:var(--muted);font-size:11.5px;margin:0}
+  #custom-wrap[hidden]{display:none}
+</style>
+</head>
+<body>
+<header><img src="icons/icon-48.png" alt=""><strong>Snoomy × SIAP</strong></header>
+<main>
+  <div id="status" class="status">Memuat…</div>
+  <label>Alamat Snoomy
+    <select id="url-choice"><option value="https://snoomy.vercel.app">snoomy.vercel.app</option><option value="custom">Lokal (untuk uji)</option></select>
+  </label>
+  <label id="custom-wrap" hidden>Alamat lokal<input id="custom-url" placeholder="http://localhost:3000"></label>
+  <label>Token sinkron<input id="token" type="password" autocomplete="off" placeholder="snm_…"></label>
+  <div class="row"><button id="save">Simpan</button><button id="sync" class="secondary">Sinkron sekarang</button></div>
+  <p class="note">Token dibuat di Snoomy: Jadwal → Impor SIAP → Sinkron otomatis. Ekstensi ini tidak pernah membaca atau menyimpan password SSO; ia hanya membaca tabel Jadwal Kuliah setelah kamu login sendiri.</p>
+</main>
+<script src="popup.js"></script>
+</body>
+</html>

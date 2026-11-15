@@ -1,0 +1,41 @@
+/* Impor jadwal SIAP / Gentayu */
+.schedule-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+#undip-dialog{width:min(560px,calc(100% - 32px))}
+#undip-dialog form{display:flex;flex-direction:column;gap:12px}
+#undip-dialog form>label,#undip-dialog .undip-file label,#undip-dialog .section-title{margin:0}
+#undip-dialog .form-actions{margin-top:4px}
+.undip-steps{margin:0;padding-left:20px;font-size:14px;line-height:1.5}
+.undip-steps li{margin:2px 0}
+.undip-note{margin:0;font-size:12.5px;color:var(--muted);background:var(--paper);border:1px dashed var(--line);border-radius:12px;padding:9px 12px}
+#undip-dialog textarea{font:13px/1.45 var(--body);display:block;width:100%;margin-top:6px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--paper);color:var(--ink);resize:vertical;min-height:110px}
+.undip-file{display:flex;align-items:center;gap:10px;font-size:13px}
+.undip-file input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.undip-file .text-button{cursor:pointer;display:inline-block;padding:4px 0}
+#undip-file-name{color:var(--muted);overflow-wrap:anywhere}
+.undip-check{display:flex;gap:8px;align-items:center;font-size:13px}
+.undip-check input{width:auto;margin:0}
+.undip-summary{margin:0;font-size:13.5px}
+.undip-same{margin:0;font-size:13.5px;color:var(--plum)}
+.undip-list{list-style:none;margin:0;padding:0;max-height:240px;overflow:auto;border-top:1px dashed var(--line)}
+.undip-list li{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px dashed var(--line)}
+.undip-list li>div{min-width:0}
+.undip-list strong{display:block;font-size:14px;overflow-wrap:anywhere}
+.undip-list small{display:block;font-size:12px;color:var(--muted)}
+.undip-list .undip-was{color:var(--plum)}
+.undip-tag{flex-shrink:0;font-size:10.5px;font-weight:800;padding:3px 7px;border-radius:7px;border:1px solid var(--line);background:var(--paper)}
+.undip-list .add .undip-tag{background:var(--matcha);border-color:var(--matcha);color:var(--ink)}
+.undip-list .update .undip-tag{background:var(--pink);border-color:var(--pink);color:var(--ink)}
+.undip-list .remove .undip-tag{color:var(--red);border-color:var(--red)}
+.undip-list .remove strong{text-decoration:line-through;opacity:.7}
+#undip-dialog .form-actions{flex-wrap:wrap}
+#undip-error:empty{display:none}
+.src-badge{display:inline-block;margin:0 8px 0 6px;font-size:10px;font-weight:800;letter-spacing:.04em;padding:2px 6px;border-radius:6px;background:var(--plum);color:var(--cream);vertical-align:1px}
+@media(max-width:600px){.schedule-actions{justify-content:flex-start}#undip-dialog .form-actions button{flex:1 1 auto}}
+.undip-auto{border:1px dashed var(--line);border-radius:14px;padding:10px 14px;background:var(--paper)}
+.undip-auto summary{font-weight:800;font-size:13.5px}
+.undip-auto p{font-size:13px;margin:8px 0}
+.undip-token-status{color:var(--muted)}
+.undip-token-box{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+.undip-token-box input{flex:1 1 200px;min-width:0;font:12px ui-monospace,Consolas,monospace;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--cream);color:var(--ink)}
+.undip-token-box small{flex-basis:100%;font-size:12px;color:var(--plum)}
+.undip-token-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap}

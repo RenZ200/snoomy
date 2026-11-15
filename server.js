@@ -10,10 +10,11 @@ import { createPush } from './push.js';
 import { mountChat } from './chat.js';
 import { mountSurprise } from './surprise.js';
 import { createAuth } from './auth.js';
+import { parseSchedule, diffSchedule, SOURCE as SIAP_SOURCE } from './undip-import.js';
 import { openDatabase } from './database.js';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { timingSafeEqual } from 'node:crypto';
+import { timingSafeEqual, randomBytes, createHash } from 'node:crypto';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -22,6 +23,7 @@ const pins = { Moreno: process.env.MORENO_PIN || '', Cahya: process.env.CAHYA_PI
 if (Object.values(pins).some(p => p && !/^\d{4}$/.test(p))) throw Error('PIN harus 4 digit.');
 if (process.env.NODE_ENV === 'production' && (!pins.Moreno || !pins.Cahya || process.env.COOKIE_SECURE !== 'true') && !process.env.VERCEL) throw Error('Hosting memerlukan kedua PIN dan COOKIE_SECURE=true.');
 const db = await openDatabase();
+const tokenHash = token => createHash('sha256').update(token).digest('hex');
 const auth = createAuth(db);
 app.get('/health', (req,res) => res.json({ok:true}));
 app.disable('x-powered-by');
@@ -42,6 +44,19 @@ const mountGoogleAuthenticated=mountGoogle(app,db,{cookie});
 const push=createPush(db);
 // The scheduled reminder check needs no login; it can only start a Real that is already due.
 mountRealTick(app,db,{push});
+// The browser extension sends the SIAP schedule page here with a personal sync token (no Snoomy cookie).
+app.post('/api/undip/push',async (req,res)=>{
+ const token=/^Bearer (snm_[A-Za-z0-9_-]{20,100})$/.exec(req.get('authorization')||'')?.[1];
+ const row=token&&await db.prepare('SELECT user_name,last_used FROM sync_tokens WHERE token_hash=?').get(tokenHash(token));
+ if(!row)return res.status(401).json({error:'Token sinkron tidak valid. Buat token baru di Snoomy.'});
+ if(Date.now()-Number(row.last_used)<30000)return res.status(429).json({error:'Terlalu sering. Coba lagi sebentar.'});
+ await db.prepare('UPDATE sync_tokens SET last_used=? WHERE token_hash=?').run(Date.now(),tokenHash(token));
+ let result;
+ try{result={ok:true,...await siapApply(row.user_name,await siapPlan(row.user_name,req.body?.text),false)};}
+ catch(e){result={ok:false,error:e.status?e.message:'Server sedang bermasalah.'};}
+ await db.prepare('UPDATE sync_tokens SET last_result=? WHERE token_hash=?').run(JSON.stringify({...result,at:Date.now()}),tokenHash(token));
+ res.status(result.ok?200:400).json({user:row.user_name,...result});
+});
 app.post('/api/login', async (req,res) => {
  const {user,pin=''} = req.body || {};
  if(!users.includes(user)) return res.status(400).json({error:'Pilih profil yang valid.'});
@@ -63,7 +78,7 @@ app.use('/api', async (req,res,next) => {
 });
 mountGoogleAuthenticated();
 app.post('/api/logout',async (req,res)=>{await auth.remove(cookie(req));res.clearCookie('duo');res.json({ok:true});});
-app.get('/api/state',async (req,res)=>res.json({user:req.user,schedules:await db.prepare('SELECT * FROM schedules ORDER BY day,start').all(),tasks:await db.prepare('SELECT * FROM tasks ORDER BY done,deadline,id DESC').all()}));
+app.get('/api/state',async (req,res)=>res.json({user:req.user,schedules:await db.prepare('SELECT s.*, ss.source FROM schedules s LEFT JOIN schedule_sources ss ON ss.schedule_id=s.id ORDER BY s.day,s.start').all(),tasks:await db.prepare('SELECT * FROM tasks ORDER BY done,deadline,id DESC').all()}));
 const fail = message => { const e=Error(message);e.status=400;throw e; };
 function str(value,label,max=120,optional=false) {
  if(typeof value !== 'string' || (!optional && !value.trim()) || value.trim().length>max) fail(`${label} tidak valid (maksimal ${max} karakter).`);
@@ -87,7 +102,59 @@ async function own(req) {
 }
 app.post('/api/schedules',async (req,res)=>{const values=schedule(req.body); const r=await db.prepare('INSERT INTO schedules(owner,day,start,end,course,lecturer,room) VALUES(?,?,?,?,?,?,?)').run(req.user,...values);res.status(201).json({id:Number(r.lastInsertRowid)});});
 app.put('/api/schedules/:id',async (req,res)=>{await own(req);await db.prepare('UPDATE schedules SET day=?,start=?,end=?,course=?,lecturer=?,room=? WHERE id=?').run(...schedule(req.body),req.params.id);res.json({ok:true});});
-app.delete('/api/schedules/:id',async (req,res)=>{await own(req);await db.prepare('DELETE FROM schedules WHERE id=?').run(req.params.id);res.json({ok:true});});
+app.delete('/api/schedules/:id',async (req,res)=>{await own(req);await db.prepare('DELETE FROM schedules WHERE id=?').run(req.params.id);await db.prepare('DELETE FROM schedule_sources WHERE schedule_id=?').run(req.params.id);res.json({ok:true});});
+// Import a class schedule the student copied from SIAP / Gentayu after logging in there themself.
+// Only rows previously imported by this user are updated or removed; manual schedules are never touched.
+async function transaction(fn){
+ if(db.exec){db.exec('BEGIN IMMEDIATE');try{const result=await fn(db);db.exec('COMMIT');return result;}catch(e){db.exec('ROLLBACK');throw e;}}
+ return db.transaction(fn);
+}
+async function siapPlan(user,text){
+ if(typeof text!=='string'||!text.trim())fail('Tempel atau unggah jadwal dari SIAP/Gentayu dulu.');
+ if(text.length>300000)fail('Data terlalu besar (maksimal 300 ribu karakter).');
+ const parsed=parseSchedule(text);
+ if(!parsed.items.length)fail('Belum ada jadwal yang terbaca. Pastikan ada hari, jam mulai–selesai, dan nama matkul.');
+ for(const item of parsed.items)schedule(item);
+ await db.prepare('DELETE FROM schedule_sources WHERE owner=? AND schedule_id NOT IN (SELECT id FROM schedules)').run(user);
+ const existing=await db.prepare('SELECT ss.schedule_id, ss.external_id, s.day, s.start, s.end, s.course, s.lecturer, s.room FROM schedule_sources ss JOIN schedules s ON s.id=ss.schedule_id WHERE ss.owner=? AND ss.source=?').all(user,SIAP_SOURCE);
+ return {...parsed,diff:diffSchedule(existing,parsed.items)};
+}
+async function siapApply(user,plan,keep){
+ const now=Date.now();
+ await transaction(async conn=>{
+  for(const item of plan.diff.add){
+   const r=await conn.prepare('INSERT INTO schedules(owner,day,start,end,course,lecturer,room) VALUES(?,?,?,?,?,?,?)').run(user,...schedule(item));
+   await conn.prepare('INSERT INTO schedule_sources(schedule_id,owner,source,external_id,imported) VALUES(?,?,?,?,?)').run(Number(r.lastInsertRowid),user,SIAP_SOURCE,item.external_id,now);
+  }
+  for(const item of plan.diff.update){
+   await conn.prepare('UPDATE schedules SET day=?,start=?,end=?,course=?,lecturer=?,room=? WHERE id=? AND owner=?').run(...schedule(item),item.schedule_id,user);
+   await conn.prepare('UPDATE schedule_sources SET external_id=?,imported=? WHERE schedule_id=?').run(item.external_id,now,item.schedule_id);
+  }
+  for(const link of plan.diff.relink)await conn.prepare('UPDATE schedule_sources SET external_id=?,imported=? WHERE schedule_id=?').run(link.external_id,now,link.schedule_id);
+  if(!keep)for(const row of plan.diff.remove){
+   await conn.prepare('DELETE FROM schedules WHERE id=? AND owner=?').run(row.schedule_id,user);
+   await conn.prepare('DELETE FROM schedule_sources WHERE schedule_id=?').run(row.schedule_id);
+  }
+ });
+ return {added:plan.diff.add.length,updated:plan.diff.update.length,removed:keep?0:plan.diff.remove.length,same:plan.diff.same};
+}
+const planView=({format,skipped,items,diff})=>({format,skipped,total:items.length,add:diff.add,update:diff.update,remove:diff.remove,same:diff.same});
+app.post('/api/undip/preview',async (req,res)=>res.json(planView(await siapPlan(req.user,req.body?.text))));
+app.post('/api/undip/import',async (req,res)=>res.json(await siapApply(req.user,await siapPlan(req.user,req.body?.text),req.body.keepMissing===true)));
+// Personal sync token for the "Snoomy × SIAP" browser extension. Only its SHA-256 hash is stored.
+app.get('/api/undip/token',async (req,res)=>{
+ const row=await db.prepare('SELECT created,last_used,last_result FROM sync_tokens WHERE user_name=?').get(req.user);
+ res.json(row?{exists:true,created:Number(row.created),lastUsed:Number(row.last_used)||null,lastResult:row.last_result?JSON.parse(row.last_result):null}:{exists:false});
+});
+app.post('/api/undip/token',async (req,res)=>{
+ const token='snm_'+randomBytes(32).toString('base64url');
+ await transaction(async conn=>{
+  await conn.prepare('DELETE FROM sync_tokens WHERE user_name=?').run(req.user);
+  await conn.prepare('INSERT INTO sync_tokens(user_name,token_hash,created,last_used,last_result) VALUES(?,?,?,?,?)').run(req.user,tokenHash(token),Date.now(),0,'');
+ });
+ res.status(201).json({token});
+});
+app.delete('/api/undip/token',async (req,res)=>{await db.prepare('DELETE FROM sync_tokens WHERE user_name=?').run(req.user);res.json({ok:true});});
 app.post('/api/tasks',async (req,res)=>{const r=await db.prepare('INSERT INTO tasks(title,deadline,assignee,priority) VALUES(?,?,?,?)').run(...task(req.body));res.status(201).json({id:Number(r.lastInsertRowid)});});
 app.put('/api/tasks/:id',async (req,res)=>{
  const row=await db.prepare('SELECT * FROM tasks WHERE id=?').get(req.params.id);
