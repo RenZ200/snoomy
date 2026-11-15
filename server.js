@@ -10,7 +10,7 @@ import { createPush } from './push.js';
 import { mountChat } from './chat.js';
 import { mountSurprise } from './surprise.js';
 import { createAuth } from './auth.js';
-import { parseSchedule, diffSchedule, SOURCE as SIAP_SOURCE } from './undip-import.js';
+import { parseSchedule, diffSchedule, parseMeetings, SOURCE as SIAP_SOURCE } from './undip-import.js';
 import { openDatabase } from './database.js';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -52,7 +52,7 @@ app.post('/api/undip/push',async (req,res)=>{
  if(Date.now()-Number(row.last_used)<30000)return res.status(429).json({error:'Terlalu sering. Coba lagi sebentar.'});
  await db.prepare('UPDATE sync_tokens SET last_used=? WHERE token_hash=?').run(Date.now(),tokenHash(token));
  let result;
- try{result={ok:true,...await siapApply(row.user_name,await siapPlan(row.user_name,req.body?.text),false)};}
+ try{result={ok:true,...await siapApply(row.user_name,await siapPlan(row.user_name,req.body?.text),false)};if(Array.isArray(req.body?.meetings))result.meetings=await siapMeetings(row.user_name,req.body.meetings);}
  catch(e){result={ok:false,error:e.status?e.message:'Server sedang bermasalah.'};}
  await db.prepare('UPDATE sync_tokens SET last_result=? WHERE token_hash=?').run(JSON.stringify({...result,at:Date.now()}),tokenHash(token));
  res.status(result.ok?200:400).json({user:row.user_name,...result});
@@ -78,7 +78,7 @@ app.use('/api', async (req,res,next) => {
 });
 mountGoogleAuthenticated();
 app.post('/api/logout',async (req,res)=>{await auth.remove(cookie(req));res.clearCookie('duo');res.json({ok:true});});
-app.get('/api/state',async (req,res)=>res.json({user:req.user,schedules:await db.prepare('SELECT s.*, ss.source FROM schedules s LEFT JOIN schedule_sources ss ON ss.schedule_id=s.id ORDER BY s.day,s.start').all(),tasks:await db.prepare('SELECT * FROM tasks ORDER BY done,deadline,id DESC').all()}));
+app.get('/api/state',async (req,res)=>res.json({user:req.user,...await meetingState(),schedules:await db.prepare('SELECT s.*, ss.source FROM schedules s LEFT JOIN schedule_sources ss ON ss.schedule_id=s.id ORDER BY s.day,s.start').all(),tasks:await db.prepare('SELECT * FROM tasks ORDER BY done,deadline,id DESC').all()}));
 const fail = message => { const e=Error(message);e.status=400;throw e; };
 function str(value,label,max=120,optional=false) {
  if(typeof value !== 'string' || (!optional && !value.trim()) || value.trim().length>max) fail(`${label} tidak valid (maksimal ${max} karakter).`);
@@ -137,6 +137,31 @@ async function siapApply(user,plan,keep){
   }
  });
  return {added:plan.diff.add.length,updated:plan.diff.update.length,removed:keep?0:plan.diff.remove.length,same:plan.diff.same};
+}
+// Dated SIAP meetings: replaced as a whole on every extension sync (the calendar is the source of truth).
+async function siapMeetings(user,list){
+ const meetings=parseMeetings(list);
+ if(!meetings.length)return 0;
+ await transaction(async conn=>{
+  await conn.prepare('DELETE FROM schedule_meetings WHERE owner=?').run(user);
+  for(let i=0;i<meetings.length;i+=50){
+   const chunk=meetings.slice(i,i+50);
+   await conn.prepare('INSERT INTO schedule_meetings(owner,external_id,date,start,end,course,room,kind) VALUES '+chunk.map(()=>'(?,?,?,?,?,?,?,?)').join(','))
+    .run(...chunk.flatMap(m=>[user,m.id,m.date,m.start,m.end,m.course,m.room,m.kind]));
+  }
+ });
+ return meetings.length;
+}
+// This week and next (Monday-based, WIB), plus each owner's covered date range.
+async function meetingState(){
+ const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta'}).format(new Date());
+ const t=Date.parse(today+'T00:00:00Z'), monday=t-((new Date(t).getUTCDay()+6)%7)*86400000;
+ const iso=ms=>new Date(ms).toISOString().slice(0,10);
+ const meetings=await db.prepare('SELECT owner, external_id AS id, date, start, end, course, room, kind FROM schedule_meetings WHERE date BETWEEN ? AND ? ORDER BY date,start').all(iso(monday),iso(monday+13*86400000));
+ const ranges=await db.prepare('SELECT owner, MIN(date) AS from_date, MAX(date) AS to_date FROM schedule_meetings GROUP BY owner').all();
+ // Ranges are clipped to the window the client receives meetings for, so dates outside it fall back to weekly.
+ const from=iso(monday),to=iso(monday+13*86400000);
+ return {meetings,meetingRange:Object.fromEntries(ranges.map(r=>[r.owner,{from:r.from_date>from?r.from_date:from,to:r.to_date<to?r.to_date:to}]))};
 }
 const planView=({format,skipped,items,diff})=>({format,skipped,total:items.length,add:diff.add,update:diff.update,remove:diff.remove,same:diff.same});
 app.post('/api/undip/preview',async (req,res)=>res.json(planView(await siapPlan(req.user,req.body?.text))));

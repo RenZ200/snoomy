@@ -9,7 +9,7 @@ function showStatus(result, token) {
   if (!result) { box.textContent = 'Siap. Login SSO di siap.undip.ac.id dan jadwalmu akan terkirim otomatis.'; return; }
   if (result.ok) {
     box.classList.add('ok');
-    box.textContent = `Tersinkron ${when(result.at)}${result.user ? ' (' + result.user + ')' : ''}: ${result.added ?? 0} baru, ${result.updated ?? 0} berubah, ${result.removed ?? 0} dihapus, ${result.same ?? 0} sama.`;
+    box.textContent = `Tersinkron ${when(result.at)}${result.user ? ' (' + result.user + ')' : ''}: ${result.added ?? 0} baru, ${result.updated ?? 0} berubah, ${result.removed ?? 0} dihapus, ${result.same ?? 0} sama${result.meetings ? `, ${result.meetings} pertemuan per tanggal` : ''}.`;
   } else {
     box.classList.add('err');
     box.textContent = `Gagal ${when(result.at)}: ${result.error || 'tidak diketahui'}`;

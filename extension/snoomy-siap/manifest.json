@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Snoomy × SIAP",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Kirim jadwal kuliah SIAP Undip ke Snoomy otomatis setelah kamu login SSO sendiri.",
   "permissions": ["storage"],
   "host_permissions": [

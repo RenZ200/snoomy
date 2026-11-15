@@ -26,6 +26,9 @@ Token Moreno dan Cahya berbeda; jadwal masuk ke pemilik token. Kalau token bocor
 
 - `content.js` jalan di halaman `siap.undip.ac.id`. Paling sering sekali per 10 menit, ia memuat `/jadwal_mahasiswa/mhs/jadwal/` dengan sesimu. Kalau sesi habis (halaman login), tidak ada yang dikirim.
 - `siap-table.js` mengambil kolom No, Hari, Matakuliah, Ruangan, Waktu, Sks (persen kehadiran diabaikan).
+- `content.js` juga mengambil kalender pertemuan per tanggal (request `get_jadwal` yang sama dengan halaman Jadwal Kuliah), jadi kelas yang pindah hari/jam, tambahan, atau batal minggu itu ikut tampil di Snoomy.
+
+**Update ekstensi:** Chrome tidak memperbarui ekstensi Load unpacked sendiri. Unduh zip terbaru dari Snoomy, timpa isi foldernya, lalu klik ikon ↻ (Reload) di `chrome://extensions`. Token tidak perlu dibuat ulang.
 - `background.js` mengirim ke `POST /api/undip/push` dengan `Authorization: Bearer <token>`, hanya kalau jadwal berubah atau sudah 6 jam sejak kiriman terakhir. Ikon menampilkan **!** kalau kiriman gagal.
 - Snoomy menerapkan aturan impor yang sama: tidak dobel, jadwal manual tidak disentuh, matkul SIAP yang hilang dari tabel dihapus.
 

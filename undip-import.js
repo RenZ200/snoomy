@@ -157,3 +157,25 @@ export function diffSchedule(existing,items){
  }
  return {add,update,remove:[...byId.values()],same:same.length,relink};
 }
+
+// Dated meetings from SIAP's calendar (jadwal_mahasiswa/mhs/jadwal/get_jadwal): one row per
+// meeting, including moved, extra and replacement meetings. Accepts SIAP field names or the
+// compact {id,date,start,end,course,room,kind} the browser extension sends.
+export const MAX_MEETINGS = 600;
+export function parseMeetings(list) {
+ if (!Array.isArray(list)) return [];
+ const out = [], seen = new Set();
+ for (const raw of list.slice(0, MAX_MEETINGS)) {
+  if (!raw || typeof raw !== 'object') continue;
+  const date = String(raw.date ?? raw.tanggal_pertemuan ?? '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || new Date(date + 'T00:00:00Z').toISOString().slice(0, 10) !== date) continue;
+  const start = parseTime(raw.start ?? raw.waktu_mulai), end = parseTime(raw.end ?? raw.waktu_selesai);
+  const course = clean(raw.course ?? raw.nama_mk, 120);
+  if (!start || !end || end <= start || !course) continue;
+  const id = clean(raw.id ?? raw.id_trx_pertemuan ?? `${date}|${start}|${course}`, 64);
+  if (!id || seen.has(id)) continue;
+  seen.add(id);
+  out.push({ id, date, start, end, course, room: clean(raw.room ?? raw.nama_ruang, 80), kind: clean(raw.kind ?? raw.jenis_perkuliahan, 40) });
+ }
+ return out.sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
+}

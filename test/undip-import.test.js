@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseSchedule, diffSchedule } from '../undip-import.js';
+import { parseSchedule, diffSchedule, parseMeetings } from '../undip-import.js';
 
 // Sample data shaped like SIAP's jadwal / lihat_krs records (field names from the SIAP app), not real student data.
 const siapJadwal = JSON.stringify({ status: 'ok', data: [
@@ -111,4 +111,21 @@ test('copy of the SIAP web "Jadwal Kuliah" table (s/d times, attendance on its o
   [2, '13:00', '14:40', 'Mata Kuliah Dua', 'E 1.3 SV TBL'],
   [5, '13:00', '18:40', 'Praktikum Contoh', 'Lab Contoh SV TBL'],
  ]);
+});
+
+test('dated SIAP meetings (get_jadwal shape and extension shape) are validated and sorted', () => {
+ const siap = { a: { id_trx_pertemuan: '901', tanggal_pertemuan: '2026-11-17', waktu_mulai: '11:35:00', waktu_selesai: '12:25:00', nama_mk: 'Mata Kuliah Satu', nama_ruang: 'E 1.1', jenis_perkuliahan: 'tatap muka', hari: 'senin' },
+  b: { id_trx_pertemuan: '902', tanggal_pertemuan: '2026-11-17', waktu_mulai: '06:40:00', waktu_selesai: '09:10:00', nama_mk: 'Mata Kuliah Dua', nama_ruang: 'E 1.6', jenis_perkuliahan: 'tatap muka', hari: 'jumat' } };
+ const fromSiap = parseMeetings(Object.values(siap));
+ assert.deepEqual(fromSiap.map(m => [m.id, m.date, m.start, m.end, m.course, m.room]), [['902', '2026-11-17', '06:40', '09:10', 'Mata Kuliah Dua', 'E 1.6'], ['901', '2026-11-17', '11:35', '12:25', 'Mata Kuliah Satu', 'E 1.1']]);
+ const compact = parseMeetings([
+  { id: '1', date: '2026-11-20', start: '18:40', end: '21:10', course: 'X', room: 'A', kind: 'tatap muka' },
+  { id: '1', date: '2026-11-21', start: '18:40', end: '21:10', course: 'duplicate id', room: '' },
+  { id: '2', date: '2026-02-30', start: '08:00', end: '09:00', course: 'bad date' },
+  { id: '3', date: '2026-11-20', start: '10:00', end: '09:00', course: 'bad time' },
+  { id: '4', date: '2026-11-20', start: '10:00', end: '11:00', course: '' },
+  'not an object',
+ ]);
+ assert.deepEqual(compact.map(m => m.id), ['1']);
+ assert.deepEqual(parseMeetings('nope'), []);
 });

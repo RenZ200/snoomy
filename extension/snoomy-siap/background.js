@@ -13,21 +13,21 @@ async function badge(ok) {
   if (!ok) await chrome.action.setBadgeBackgroundColor({ color: '#E75CA6' });
 }
 
-async function send(text, force) {
+async function send(text, meetings, force) {
   const { snoomyUrl = DEFAULT_URL, token = '', lastHash = '', lastSentAt = 0 } =
     await chrome.storage.local.get(['snoomyUrl', 'token', 'lastHash', 'lastSentAt']);
   if (!token) {
     const result = { ok: false, error: 'Token sinkron belum diisi. Buka ikon ekstensi lalu tempel token dari Snoomy.', at: Date.now() };
     await chrome.storage.local.set({ lastResult: result }); await badge(false); return result;
   }
-  const hash = await sha256(text);
+  const hash = await sha256(JSON.stringify({ text, meetings }));
   if (!force && hash === lastHash && Date.now() - lastSentAt < RESEND_AFTER) return { ok: true, skipped: 'unchanged' };
   let result;
   try {
     const res = await fetch(snoomyUrl.replace(/\/+$/, '') + '/api/undip/push', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify(meetings ? { text, meetings } : { text }),
     });
     const data = await res.json().catch(() => ({}));
     if (res.status === 429) return { ok: true, skipped: 'rate-limited' };
@@ -45,6 +45,7 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
   if (message?.type !== 'siap-schedule' || typeof message.text !== 'string') return false;
   // Accept schedule text only from the SIAP content script.
   if (!sender.url || new URL(sender.url).origin !== 'https://siap.undip.ac.id') return false;
-  send(message.text.slice(0, 300000), message.force).then(reply);
+  const meetings = Array.isArray(message.meetings) ? message.meetings.slice(0, 600) : null;
+  send(message.text.slice(0, 300000), meetings, message.force).then(reply);
   return true;
 });

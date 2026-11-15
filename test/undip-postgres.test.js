@@ -40,5 +40,13 @@ test('SIAP import SQL works on PostgreSQL', async () => {
   const info = await db.prepare('SELECT created,last_used,last_result FROM sync_tokens WHERE user_name=?').get('Moreno');
   assert.equal(info.last_result, '{"ok":true}');
   assert.equal((await db.prepare('DELETE FROM sync_tokens WHERE user_name=?').run('Moreno')).changes, 1);
+
+  const rows = [['Moreno', 'm1', '2026-11-17', '06:40', '09:10', 'Dua', 'E 1.6', 'tatap muka'], ['Moreno', 'm2', '2026-11-17', '11:35', '12:25', 'Satu', 'E 1.1', 'tatap muka']];
+  await db.prepare('INSERT INTO schedule_meetings(owner,external_id,date,start,end,course,room,kind) VALUES ' + rows.map(() => '(?,?,?,?,?,?,?,?)').join(',')).run(...rows.flat());
+  const week = await db.prepare('SELECT owner, external_id AS id, date, start, end, course, room, kind FROM schedule_meetings WHERE date BETWEEN ? AND ? ORDER BY date,start').all('2026-11-16', '2026-11-29');
+  assert.deepEqual(week.map(m => [m.id, m.start, m.end]), [['m1', '06:40', '09:10'], ['m2', '11:35', '12:25']]);
+  const range = await db.prepare('SELECT owner, MIN(date) AS from_date, MAX(date) AS to_date FROM schedule_meetings GROUP BY owner').all();
+  assert.deepEqual(range.map(r => [r.owner, r.from_date, r.to_date]), [['Moreno', '2026-11-17', '2026-11-17']]);
+  assert.equal((await db.prepare('DELETE FROM schedule_meetings WHERE owner=?').run('Moreno')).changes, 2);
  } finally { await db.close(); }
 });

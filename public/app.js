@@ -18,6 +18,27 @@ function freeTogether(classes,now){
  if(1260-cursor>=60)slots.push([cursor,1260]);
  return slots;
 }
+const plusDays=(date,n)=>new Date(Date.parse(date+'T12:00:00Z')+n*86400000).toISOString().slice(0,10);
+const weekDates=()=>{const t=wibDate(),d=dayIndex();return days.map((_,i)=>plusDays(t,i+1-d));};
+const courseKey=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+// Classes on one date. Weekly schedules apply, except that SIAP classes follow the dated SIAP
+// calendar (moved, extra or cancelled meetings) for owners whose synced calendar covers the date.
+function classesOn(date,day){
+ const weekly=state.schedules.filter(s=>s.day===day), ranges=state.meetingRange||{};
+ const covered=owner=>ranges[owner]&&date>=ranges[owner].from&&date<=ranges[owner].to;
+ const out=weekly.filter(s=>s.source!=='siap'||!covered(s.owner));
+ for(const owner of Object.keys(ranges)){
+  if(!covered(owner))continue;
+  const slots=weekly.filter(s=>s.owner===owner&&s.source==='siap'), used=new Set();
+  for(const m of (state.meetings||[]).filter(m=>m.owner===owner&&m.date===date)){
+   const match=slots.find(s=>!used.has(s.id)&&courseKey(s.course)===courseKey(m.course)&&s.start===m.start);
+   if(match)used.add(match.id);
+   out.push({...(match||{}),id:match?match.id:'m'+m.id,owner,day,start:m.start,end:m.end,course:m.course,room:m.room||match?.room||'',lecturer:match?.lecturer||'',source:'siap',changed:!match,roomChanged:!!(match&&m.room&&m.room!==match.room)});
+  }
+  for(const s of slots)if(!used.has(s.id))out.push({...s,cancelled:true});
+ }
+ return out.sort((a,b)=>a.start.localeCompare(b.start));
+}
 function due(task){const d=distance(task.deadline);return d<0?`Lewat ${-d} hari`:d===0?'Hari ini':d===1?'Besok':dateLabel(task.deadline);}
 // A toast can carry one action (for example "Urungkan"); it then stays a little longer.
 function toast(message,action){
@@ -34,7 +55,7 @@ async function api(path,method='GET',body){
 async function refresh(){if(refreshing)return;refreshing=true;try{state=await api('/state');render();document.dispatchEvent(new CustomEvent('snoomy-session',{detail:{user:state.user}}));$('#sync').textContent='Tersimpan di server · sinkron tiap 10 detik';}catch(e){$('#sync').textContent='Belum tersambung · mencoba lagi';if(state.user)toast(e.message);}finally{refreshing=false;}}
 let live={now:new Set(),next:null};
 const liveBadge=s=>live.now.has(s.id)?'<span class="live-badge now">Sekarang</span>':live.next===s.id?'<span class="live-badge next">Berikutnya</span>':'';
-function classCard(s){const conflict=state.schedules.some(o=>o.id!==s.id&&o.day===s.day&&o.start<s.end&&o.end>s.start);return `<article class="class-card ${s.owner==='Cahya'?'cahya':''} ${live.now.has(s.id)?'is-now':''}">${liveBadge(s)}<span class="owner">${s.owner}</span>${s.source==='siap'?'<span class="src-badge" title="Dari SIAP / Gentayu">SIAP</span>':''}<small>${s.start} – ${s.end}</small><strong>${escape(s.course)}</strong>${s.room?`<small>${escape(s.room)}</small>`:''}${s.lecturer?`<small>${escape(s.lecturer)}</small>`:''}${conflict?'<small class="conflict">Bentrok</small>':''}${s.owner===state.user?`<div class="card-actions"><button class="text-button" data-action="edit-schedule" data-id="${s.id}">Edit</button><button class="text-button" data-action="delete-schedule" data-id="${s.id}">Hapus</button></div>`:''}</article>`;}
+function classCard(s,list=[s]){const conflict=!s.cancelled&&list.some(o=>o!==s&&!o.cancelled&&o.start<s.end&&o.end>s.start);return `<article class="class-card ${s.owner==='Cahya'?'cahya':''} ${live.now.has(s.id)?'is-now':''} ${s.cancelled?'is-cancelled':''}">${liveBadge(s)}<span class="owner">${s.owner}</span>${s.source==='siap'?'<span class="src-badge" title="Dari SIAP / Gentayu">SIAP</span>':''}<small>${s.start} – ${s.end}</small>${s.changed?'<small class="chg-badge">Jadwal berubah</small>':''}${s.roomChanged?'<small class="chg-badge">Ruang pindah</small>':''}${s.cancelled?'<small class="cancel-badge">Tidak ada kelas</small>':''}<strong>${escape(s.course)}</strong>${s.room?`<small>${escape(s.room)}</small>`:''}${s.lecturer?`<small>${escape(s.lecturer)}</small>`:''}${conflict?'<small class="conflict">Bentrok</small>':''}${s.owner===state.user&&Number.isInteger(s.id)?`<div class="card-actions"><button class="text-button" data-action="edit-schedule" data-id="${s.id}">Edit</button><button class="text-button" data-action="delete-schedule" data-id="${s.id}">Hapus</button></div>`:''}</article>`;}
 function taskCard(t){const urgent=!t.done&&distance(t.deadline)<=1;return `<article class="task ${urgent?'urgent':''} ${distance(t.deadline)<0?'overdue':''} ${t.done?'done':''}"><input type="checkbox" aria-label="Tandai ${escape(t.title)} ${t.done?'belum selesai':'selesai'}" data-action="check-task" data-id="${t.id}" ${t.done?'checked':''}><div class="task-main"><div class="task-title">${escape(t.title)}</div><div class="task-meta"><span class="who ${t.assignee.toLowerCase()}">${t.assignee==='Berdua'?'♡ Berdua':t.assignee}</span><span class="${urgent?'due':''}">${due(t)}</span><span class="priority ${t.priority==='Tinggi'?'high':''}">${t.priority}</span></div></div><div class="card-actions"><button class="text-button" data-action="edit-task" data-id="${t.id}">Edit</button><button class="text-button" data-action="delete-task" data-id="${t.id}">Hapus</button></div></article>`;}
 function render(){
  const now=wibNow();
@@ -42,17 +63,18 @@ function render(){
  $('#greeting').innerHTML=`<span class="greet">${greeting(now)},</span> ${escape(state.user)}!`;
  $('#profile').textContent=state.user;$('#profile').setAttribute('aria-label',`Profil ${state.user}, buka menu`);
  $('#today').textContent=new Intl.DateTimeFormat('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Jakarta'}).format(new Date());
- const today=state.schedules.filter(s=>s.day===dayIndex());
+ const todayAll=classesOn(wibDate(),dayIndex()), today=todayAll.filter(s=>!s.cancelled);
  live={now:new Set(today.filter(s=>minutes(s.start)<=now&&now<minutes(s.end)).map(s=>s.id)),next:today.filter(s=>minutes(s.start)>now).sort((a,b)=>a.start.localeCompare(b.start))[0]?.id??null};
  $('#class-count').textContent=`${today.length} kelas`;
  $('#ql-calendar').textContent=today.length?`${today.length} kelas hari ini`:'Hari ini bebas kelas';
  const free=freeTogether(today,now);
  $('#free-together').hidden=now>=1200;
  $('#free-together').textContent=!today.length?'Kalian sama-sama bebas hari ini ♡':free.length?`Kosong bareng: ${free.slice(0,2).map(([a,b])=>`${clock(a)}–${clock(b)}`).join(' · ')}`:'Sisa hari ini cukup padat. Semangat ♡';
- $('#today-classes').innerHTML=today.length?today.map(s=>`<div class="mini ${live.now.has(s.id)?'is-now':''}"><span class="dot ${s.owner==='Cahya'?'cahya':''}"></span><span class="time">${s.start}<br>${s.end}</span><div><strong>${escape(s.course)}</strong><p>${s.owner}${s.room?' · '+escape(s.room):''}</p>${liveBadge(s)}</div></div>`).join(''):'<p class="empty">Tidak ada kelas hari ini. Waktunya tarik napas ♡</p>';
+ $('#today-classes').innerHTML=todayAll.length?todayAll.map(s=>`<div class="mini ${live.now.has(s.id)?'is-now':''} ${s.cancelled?'is-cancelled':''}"><span class="dot ${s.owner==='Cahya'?'cahya':''}"></span><span class="time">${s.start}<br>${s.end}</span><div><strong>${escape(s.course)}</strong><p>${s.owner}${s.room?' · '+escape(s.room):''}${s.cancelled?' · tidak ada kelas':s.changed?' · jadwal berubah':s.roomChanged?' · ruang pindah':''}</p>${liveBadge(s)}</div></div>`).join(''):'<p class="empty">Tidak ada kelas hari ini. Waktunya tarik napas ♡</p>';
  const soon=state.tasks.filter(t=>!t.done&&distance(t.deadline)<=3);
  $('#soon-tasks').innerHTML=soon.length?soon.slice(0,4).map(t=>`<div class="mini mini-task"><input type="checkbox" aria-label="Tandai ${escape(t.title)} selesai" data-action="check-task" data-id="${t.id}"><div><strong>${escape(t.title)}</strong><p>${t.assignee} · ${due(t)}</p></div></div>`).join(''):'<p class="empty">Belum ada deadline dalam 3 hari ke depan. Lega!</p>';
- $('#week').innerHTML=days.map((d,i)=>{const items=state.schedules.filter(s=>s.day===i+1);return `<section class="day ${dayIndex()===i+1?'current':''}"><h3>${d}</h3>${items.length?items.map(classCard).join(''):'<p class="empty">Ruang kosong ♡</p>'}</section>`;}).join('');
+ const dates=weekDates();
+ $('#week').innerHTML=days.map((d,i)=>{const items=classesOn(dates[i],i+1);return `<section class="day ${dayIndex()===i+1?'current':''}"><h3>${d} <span class="day-date">${Number(dates[i].slice(8))}</span></h3>${items.length?items.map(s=>classCard(s,items)).join(''):'<p class="empty">Ruang kosong ♡</p>'}</section>`;}).join('');
  const tasks=state.tasks.filter(t=>filter==='all'||(filter==='done'?t.done:!t.done));
  const group=t=>t.done?'Selesai':distance(t.deadline)<0?'Terlambat':distance(t.deadline)<=1?'Hari ini & besok':distance(t.deadline)<=7?'Minggu ini':'Nanti';
  const counts=tasks.reduce((all,t)=>({...all,[group(t)]:(all[group(t)]||0)+1}),{});

@@ -113,6 +113,24 @@ test('extension push: personal token, hash-only storage, owner scoping, rate lim
   const state = (await request('/state', 'GET', null, { cookie: moreno })).body.schedules;
   assert.equal(state.filter(s => s.source === 'siap' && s.owner === 'Moreno').length, 2);
 
+  // Dated meetings: stored with the push and returned for this week in /state.
+  const wib = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date());
+  const t = Date.parse(wib + 'T00:00:00Z'), monday = t - ((new Date(t).getUTCDay() + 6) % 7) * 86400000;
+  const day = n => new Date(monday + n * 86400000).toISOString().slice(0, 10);
+  const meetings = [
+   { id: 'a1', date: day(0), start: '08:00', end: '08:50', course: 'Mata Kuliah Satu', room: 'E 1.1', kind: 'tatap muka' },
+   { id: 'a2', date: day(1), start: '06:40', end: '09:10', course: 'Mata Kuliah Dua', room: 'E 1.6', kind: 'tatap muka' },
+   { id: 'a3', date: day(30), start: '08:00', end: '08:50', course: 'Mata Kuliah Satu', room: 'E 1.1', kind: 'tatap muka' },
+  ];
+  await new Promise(r => setTimeout(r, 30500));
+  const withMeetings = await request('/undip/push', 'POST', { text: page, meetings }, { authorization: 'Bearer ' + token });
+  assert.equal(withMeetings.status, 200);
+  assert.equal(withMeetings.body.meetings, 3);
+  const st = (await request('/state', 'GET', null, { cookie: moreno })).body;
+  assert.deepEqual(st.meetings.map(m => [m.owner, m.id, m.date, m.start, m.end]), [['Moreno', 'a1', day(0), '08:00', '08:50'], ['Moreno', 'a2', day(1), '06:40', '09:10']]);
+  // The covered range is clipped to the two-week window the client gets meetings for.
+  assert.deepEqual(st.meetingRange, { Moreno: { from: day(0), to: day(13) } });
+
   // A new token replaces the old one; revoking stops pushes.
   const second = (await request('/undip/token', 'POST', {}, { cookie: moreno })).body.token;
   assert.equal((await request('/undip/push', 'POST', { text: page }, { authorization: 'Bearer ' + token })).status, 401);

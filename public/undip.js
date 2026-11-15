@@ -34,13 +34,14 @@
   <p id="undip-error" class="error" role="alert"></p>
   <details class="undip-auto" id="undip-auto"><summary>Sinkron otomatis (ekstensi laptop)</summary>
    <p>Pasang ekstensi <strong>Snoomy × SIAP</strong> di Chrome/Edge <strong>laptop</strong>. Setelah itu cukup login SSO di SIAP, jadwalmu terkirim ke Snoomy sendiri.</p>
-   <a class="undip-download" href="/downloads/snoomy-siap.zip?v=1.0.1" download="snoomy-siap.zip">Unduh ekstensi (.zip)</a>
+   <a class="undip-download" href="/downloads/snoomy-siap.zip?v=1.1.0" download="snoomy-siap.zip">Unduh ekstensi (.zip)</a>
    <ol class="undip-install">
     <li>Ekstrak zip-nya, simpan foldernya di tempat tetap (jangan dihapus).</li>
     <li>Buka <code>chrome://extensions</code> (Edge: <code>edge://extensions</code>), nyalakan <strong>Developer mode</strong>.</li>
     <li>Klik <strong>Load unpacked</strong>, pilih folder hasil ekstrak, yaitu folder yang langsung berisi <code>manifest.json</code>.</li>
     <li>Buat token di bawah, klik ikon Snoomy di toolbar, tempel token, <strong>Simpan</strong>.</li>
    </ol>
+   <p class="undip-update">Sudah pernah pasang? Unduh lagi, timpa isi folder lamanya, lalu klik ↻ <strong>Reload</strong> pada ekstensi di <code>chrome://extensions</code>. Versi 1.1 ikut membawa perubahan jadwal per tanggal (kelas pindah, tambahan, atau batal).</p>
    <p id="undip-token-status" class="undip-token-status">Memeriksa…</p>
    <div id="undip-token-box" class="undip-token-box" hidden><input id="undip-token" readonly aria-label="Token sinkron"><button type="button" class="secondary" id="undip-token-copy">Salin</button><small>Tempel di pengaturan ekstensi. Token hanya ditampilkan sekali.</small></div>
    <div class="undip-token-actions"><button type="button" class="secondary" id="undip-token-new">Buat token</button><button type="button" class="text-button" id="undip-token-revoke" hidden>Cabut token</button></div>
