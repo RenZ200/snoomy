@@ -4,8 +4,10 @@
  if(!games||!panel)return;
  const COLORS=['#241726','#E75CA6','#D6483C','#E8A33D','#93AE6B','#5B8FB9','#8B6BB1','#fffcf5'],ERASER=7,SIZES=[5,11,24],SEND_EVERY=1100,MAX_POINTS=11000;
  const part=name=>panel.querySelector(`[data-${name}]`);
- const canvas=part('canvas'),paint=canvas.getContext('2d'),players=part('players');
- let strokes=[],current=null,dirty=false,from=0,sending=false,timer=null,round=0,color=0,size=1,saved=0;
+ const el=(tag,text,className)=>{const node=document.createElement(tag);if(text!=null)node.textContent=text;if(className)node.className=className;return node;};
+ const canvas=part('canvas'),frame=canvas.parentElement,paint=canvas.getContext('2d'),players=part('players'),live=el('p',null,'sketch-live');
+ let strokes=[],current=null,dirty=false,from=0,sending=false,timer=null,round=0,color=0,size=1,saved=0,wordKey='',choiceKey='',logKey='';
+ live.hidden=true;frame.append(live);
  const mine=()=>ctrl.game?.status==='playing'&&ctrl.game.stage==='draw'&&ctrl.game.drawer===ctrl.game.you;
  const points=()=>strokes.reduce((total,line)=>total+line.p.length/2,0);
 
@@ -69,6 +71,24 @@
  function tools(){
   for(const button of part('tools').querySelectorAll('[data-color]'))button.setAttribute('aria-pressed',String(Number(button.dataset.color)===color));
   for(const button of part('tools').querySelectorAll('[data-size]'))button.setAttribute('aria-pressed',String(Number(button.dataset.size)===size));
+  part('tools').style.setProperty('--ink',COLORS[color===ERASER?0:color]);
+ }
+ // The word as letter tiles: blank for the guesser, filled for the drawer, flipping open when the round ends.
+ function tiles(word,hint,reveal){
+  const host=part('word'),groups=word?word.split(' ').map(piece=>[...piece]):hint.split('   ').map(piece=>piece.split(' ').map(()=>''));
+  let count=0;
+  host.replaceChildren(...groups.map(letters=>{
+   const group=el('span');
+   for(const letter of letters){const tile=el('i',letter,reveal?'reveal':'');tile.style.setProperty('--i',count++);group.append(tile);}
+   return group;
+  }));
+  host.setAttribute('aria-label',word||`${count} huruf`);
+ }
+ // Each guess floats up over the drawing, so the drawer sees it without looking away.
+ function bubble(text,kind){
+  const note=el('p',text,`sketch-bubble ${kind}`);
+  note.setAttribute('aria-hidden','true');frame.append(note);
+  setTimeout(()=>note.remove(),2700);
  }
  part('tools').querySelectorAll('[data-color]').forEach(button=>{button.style.setProperty('--swatch',COLORS[button.dataset.color]);});
  tools();
@@ -109,11 +129,23 @@
   fast:game=>game.stage==='draw',
   result:game=>game.winner?`${game.winner===game.you?'Kamu':game.winner} bener! Katanya: ${game.word}`:`Nyerah. Katanya: ${game.word}`,
   restartText:'Mulai ulang ronde ini? Gambarnya akan hilang.',
-  render(game,before,{yourTurn}){
+  render(game,before,{yourTurn,open}){
    const fresh=game.round!==round,drawing=game.status==='playing'&&game.stage==='draw'&&game.drawer===game.you;
    if(fresh){round=game.round;current=null;dirty=false;from=game.strokes.length;strokes=game.strokes;redraw();}
    else if(!drawing){strokes=game.strokes;from=strokes.length;redraw();}
-   part('word').textContent=game.status==='finished'||game.drawer===game.you?(game.word||''):game.hint;
+   const word=game.status==='finished'||game.drawer===game.you?game.word:null,key=`${game.round}.${game.status}.${word??game.hint}`;
+   if(key!==wordKey){wordKey=key;tiles(word,game.hint,game.status==='finished'&&game.drawer!==game.you&&!!before);}
+   const entries=JSON.stringify(game.log),last=game.log.at(-1);
+   if(open&&before?.round===game.round&&entries!==logKey&&last?.who&&last.who!==game.drawer&&last.text.includes(' nebak ')){
+    const kind=last.text.endsWith('Bener!')?'right':last.text.endsWith('dikit lagi!')?'close':'wrong';
+    bubble(last.text.replace(/^\S+ nebak /,''),kind);
+    if(kind!=='right'&&last.who===game.you){const form=part('guess');form.classList.remove('shake');void form.offsetWidth;form.classList.add('shake');}
+   }
+   logKey=entries;
+   live.hidden=!(game.status==='playing'&&game.stage==='draw'&&game.drawer!==game.you);
+   live.textContent=`${game.drawer} lagi gambar`;
+   frame.classList.toggle('won',game.status==='finished'&&!!game.winner);
+   if(open&&before?.status==='playing'&&game.status==='finished'&&game.winner)games.confetti(frame);
    part('word-label').textContent=game.status==='finished'?'Katanya':game.drawer===game.you?'Gambar ini':'Tebak ini';
    part('word-box').hidden=game.stage==='pick';
    part('tools').hidden=!drawing;
@@ -122,8 +154,11 @@
    const picking=game.status==='playing'&&game.stage==='pick';
    part('choices').hidden=!(picking&&yourTurn);
    part('wait').hidden=!(picking&&!yourTurn);
-   if(picking)part('wait').textContent=`${game.drawer} lagi milih kata…`;
-   if(picking&&yourTurn)part('choices').replaceChildren(...game.choices.map((word,index)=>{const button=document.createElement('button');button.type='button';button.dataset.index=index;button.textContent=word;return button;}));
+   if(picking){const dots=el('span',null,'dots');dots.append(el('i'),el('i'),el('i'));part('wait').replaceChildren(`${game.drawer} lagi milih kata`,dots);}
+   if(picking&&yourTurn&&choiceKey!==`${game.you}.${game.round}`){
+    choiceKey=`${game.you}.${game.round}`;
+    part('choices').replaceChildren(el('p','Mau gambar yang mana?'),...game.choices.map((word,index)=>{const button=el('button',word);button.type='button';button.dataset.index=index;return button;}));
+   }
    const save=part('save');
    save.hidden=game.status!=='finished'||!game.strokes.length;
    if(!save.hidden){save.disabled=saved===game.round;save.textContent=saved===game.round?'Tersimpan ♡':'Simpan ke Galeri';}

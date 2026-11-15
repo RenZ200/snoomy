@@ -157,6 +157,18 @@ window.SnoomyGames = (() => {
   return {move:body=>send('/move',body),push,get game(){return game;},get busy(){return busy;},panel};
  }
 
+ // A finite burst of paper from the middle of an element: a win, a right guess, a matching answer.
+ function confetti(target,count=26){
+  if(!target||!moving())return;
+  const box=target.getBoundingClientRect(),colors=['var(--matcha)','var(--pink)','var(--taro)','var(--vanila)','var(--plum)'];
+  for(let i=0;i<count;i++){
+   const piece=el('span',null,'confetti');piece.setAttribute('aria-hidden','true');piece.style.background=colors[i%colors.length];
+   document.body.append(piece);
+   window.gsap.set(piece,{left:box.left+box.width/2,top:box.top+box.height/2,xPercent:-50,yPercent:-50});
+   window.gsap.to(piece,{x:(Math.random()-.5)*Math.min(innerWidth,620),y:-100-Math.random()*200,rotation:Math.random()*720-360,duration:.9,ease:'power3.out'});
+   window.gsap.to(piece,{y:'+=300',opacity:0,duration:1.1,delay:.75,ease:'power1.in',onComplete:()=>piece.remove()});
+  }
+ }
  // A die with pips; rolling shuffles faces while it spins, then lands on the value.
  function dice(button){
   const die=button.querySelector('.die');
@@ -202,5 +214,5 @@ window.SnoomyGames = (() => {
  document.addEventListener('snoomy-game',refresh);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden){poll();refresh();}schedule();});
  select(active);
- return {board,dice,spread,report,moving,sound,buzz,notify,active:()=>active,isOpen};
+ return {board,dice,spread,report,moving,sound,buzz,notify,confetti,active:()=>active,isOpen};
 })();
