@@ -8,3 +8,5 @@ data/
 *.log
 *.zip
 *.sqlite*
+# Downloadable browser extension, built by scripts/build-extension.js
+!public/downloads/snoomy-siap.zip
