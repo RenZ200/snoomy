@@ -6,10 +6,13 @@ Ekstensi ini **tidak** membaca, mengisi, atau menyimpan password SSO, dan tidak 
 
 ## Pasang (sekali, masing-masing di laptop Moreno dan Cahya)
 
-1. Buka `chrome://extensions` (Edge: `edge://extensions`).
-2. Nyalakan **Developer mode** (pojok kanan atas).
-3. Klik **Load unpacked**, pilih folder `extension/snoomy-siap` ini.
-4. Sematkan ikon Snoomy di toolbar (ikon puzzle → pin).
+1. Unduh dari Snoomy: **Jadwal → Impor SIAP → Sinkron otomatis → Unduh ekstensi (.zip)**, lalu ekstrak. Simpan foldernya di tempat tetap; Chrome memuat ekstensi dari folder itu.
+2. Buka `chrome://extensions` (Edge: `edge://extensions`).
+3. Nyalakan **Developer mode** (pojok kanan atas).
+4. Klik **Load unpacked**, pilih folder `snoomy-siap` hasil ekstrak (yang berisi `manifest.json`).
+5. Sematkan ikon Snoomy di toolbar (ikon puzzle → pin).
+
+Untuk pengembang: setelah mengubah file di `extension/snoomy-siap`, jalankan `node scripts/build-extension.js` agar zip unduhan di `public/downloads/` ikut diperbarui (dicek oleh `test/extension-zip.test.js`).
 
 ## Sambungkan ke Snoomy
 
