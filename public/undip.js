@@ -34,11 +34,11 @@
   <p id="undip-error" class="error" role="alert"></p>
   <details class="undip-auto" id="undip-auto"><summary>Sinkron otomatis (ekstensi laptop)</summary>
    <p>Pasang ekstensi <strong>Snoomy × SIAP</strong> di Chrome/Edge <strong>laptop</strong>. Setelah itu cukup login SSO di SIAP, jadwalmu terkirim ke Snoomy sendiri.</p>
-   <a class="undip-download" href="/downloads/snoomy-siap.zip?v=1.0.0" download="snoomy-siap.zip">Unduh ekstensi (.zip)</a>
+   <a class="undip-download" href="/downloads/snoomy-siap.zip?v=1.0.1" download="snoomy-siap.zip">Unduh ekstensi (.zip)</a>
    <ol class="undip-install">
     <li>Ekstrak zip-nya, simpan foldernya di tempat tetap (jangan dihapus).</li>
     <li>Buka <code>chrome://extensions</code> (Edge: <code>edge://extensions</code>), nyalakan <strong>Developer mode</strong>.</li>
-    <li>Klik <strong>Load unpacked</strong>, pilih folder <code>snoomy-siap</code>.</li>
+    <li>Klik <strong>Load unpacked</strong>, pilih folder hasil ekstrak, yaitu folder yang langsung berisi <code>manifest.json</code>.</li>
     <li>Buat token di bawah, klik ikon Snoomy di toolbar, tempel token, <strong>Simpan</strong>.</li>
    </ol>
    <p id="undip-token-status" class="undip-token-status">Memeriksa…</p>

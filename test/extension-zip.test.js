@@ -25,9 +25,10 @@ test('the downloadable extension zip matches extension/snoomy-siap (run: node sc
   assert.ok(committed.equals(buildExtensionZip()), 'public/downloads/snoomy-siap.zip is out of date: run node scripts/build-extension.js');
   const files = readZip(committed);
   for (const name of ['manifest.json', 'background.js', 'content.js', 'siap-table.js', 'popup.html', 'popup.js', 'icons/icon-128.png']) {
-    assert.ok(files['snoomy-siap/' + name], 'missing ' + name);
+    assert.ok(files[name], 'missing ' + name);
   }
-  const manifest = JSON.parse(files['snoomy-siap/manifest.json']);
+  assert.ok(Object.keys(files).every(n => !n.startsWith('snoomy-siap/')), 'files must be at the zip root');
+  const manifest = JSON.parse(files['manifest.json']);
   assert.equal(manifest.manifest_version, 3);
   assert.ok(manifest.host_permissions.includes('https://snoomy.vercel.app/*'));
 });

@@ -23,7 +23,9 @@ function files(dir) {
 
 export function buildExtensionZip(dir = EXTENSION_DIR) {
   const entries = files(dir)
-    .map(path => ({ name: 'snoomy-siap/' + relative(dir, path).split('\\').join('/'), path }))
+    // Files sit at the zip root: Windows "Extract All" then makes one snoomy-siap folder that
+    // holds manifest.json directly (a nested folder made "Load unpacked" fail).
+    .map(path => ({ name: relative(dir, path).split('\\').join('/'), path }))
     .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   const local = [], central = [];
   let offset = 0;
