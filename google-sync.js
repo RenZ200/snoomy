@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { fields, table, pick, same, hash, toEvent, fromEvent } from './google-model.js';
+import { syncMeetings, ownOverlayIds, MEETING_PREFIX } from './google-meetings.js';
 
 // One database lease covers both profiles because a shared task may be in both calendars.
 export async function withGoogleLock(db, fn) {
@@ -34,8 +35,10 @@ export async function syncCalendar(db,user,remote,{resolution}={}) {
  do {checkTime();const list=await remote.list(page);for(const e of list.items||[])events.set(e.id,e);page=list.nextPageToken;}while(page);
  const maps=await db.prepare('SELECT * FROM google_maps WHERE user_name=?').all(user);
  const mapped=new Set(maps.map(m=>m.event_id));
- // An exception cannot be represented by Snoomy's weekly-only model. Protect its entire series.
- const exceptions=new Set([...events.values()].filter(e=>e.recurringEventId).map(e=>e.recurringEventId));
+ // An exception cannot be represented by Snoomy's weekly-only model. Protect its entire series,
+ // except for the per-date SIAP changes Snoomy itself made (google-meetings.js).
+ const own=await ownOverlayIds(db,user);
+ const exceptions=new Set([...events.values()].filter(e=>e.recurringEventId&&!own.has(e.id)).map(e=>e.recurringEventId));
  for(const map of maps) {
   checkTime();
   if(exceptions.has(map.event_id)){result.warnings.push('Satu seri punya perubahan per kejadian. Kembalikan pengecualiannya di Google sebelum menyinkronkan seri itu.');continue;}
@@ -75,7 +78,7 @@ export async function syncCalendar(db,user,remote,{resolution}={}) {
   checkTime();if(mapped.has(event.id)||event.status==='cancelled'||event.recurringEventId)continue;
   if(exceptions.has(event.id)){result.warnings.push('Seri dengan pengecualian per kejadian belum didukung.');continue;}
   // Generated IDs may exist after a successful Google write followed by a database timeout.
-  if(event.id.startsWith('5000'))continue;
+  if(event.id.startsWith('5000')||event.id.startsWith(MEETING_PREFIX)||own.has(event.id))continue;
   try{const {kind,row}=fromEvent(event,user);await importEvent(db,user,event,kind,row);result.changed++;}
   catch(e){if(e.code)throw e;result.warnings.push(e.message);}
  }
@@ -88,5 +91,6 @@ export async function syncCalendar(db,user,remote,{resolution}={}) {
    await db.prepare('INSERT INTO google_maps(user_name,kind,local_id,event_id,baseline) VALUES(?,?,?,?,?)').run(user,kind,record.id,event.id,JSON.stringify(event.recovered?null:local));result.changed++;
   }
  }
+ if(remote.instances){const overlay=await syncMeetings(db,user,remote,events,{checkTime});result.changed+=overlay.changed;result.warnings.push(...overlay.warnings);}
  result.warnings=[...new Set(result.warnings)];return result;
 }

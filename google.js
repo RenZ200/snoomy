@@ -48,6 +48,7 @@ export function mountGoogle(app,db,{cookie}) {
    list:page=>call(path+'?singleEvents=false&showDeleted=true&maxResults=2500'+(page?'&pageToken='+encodeURIComponent(page):'')),
    async get(id){try{return await call(path+'/'+encodeURIComponent(id));}catch(e){if([404,410].includes(e.googleStatus))return null;throw e;}},
    async create(body){try{return await call(path,'POST',body);}catch(e){if(e.googleStatus===409){const found=await this.get(body.id);if(found&&found.status!=='cancelled')return {...found,recovered:true};}throw e;}},
+   instances:(id,min,max)=>call(path+'/'+encodeURIComponent(id)+'/instances?showDeleted=true&maxResults=100&timeMin='+encodeURIComponent(min)+'&timeMax='+encodeURIComponent(max)),
    update:(id,body,etag)=>call(path+'/'+encodeURIComponent(id),'PATCH',body,etag),
    async remove(id,etag){try{return await call(path+'/'+encodeURIComponent(id),'DELETE',null,etag);}catch(e){if(![404,410].includes(e.googleStatus))throw e;}},
   };
